@@ -1161,14 +1161,6 @@ const PAGE_TITLES = {
   accessori: { pre: 'Acces',  post: 'sori' },
   profilo:   { pre: 'Profi',  post: 'lo'   },
 }
-// Pulsante azione destra per tab
-const PAGE_RIGHT_ICONS = {
-  mappa:     <MapPin size={16} />,
-  aivet:     <Stethoscope size={16} />,
-  diario:    <Plus size={16} />,
-  accessori: <ShoppingBag size={16} />,
-  profilo:   <Dog size={16} />,
-}
 
 export default function Dashboard() {
   const navigate = useNavigate()
