@@ -1265,17 +1265,9 @@ export default function Dashboard() {
         /* Home tab — solo safe-area, niente header visibile */
         <div className="shrink-0 pt-12" style={{ backgroundColor: '#F6ECC8' }} />
       ) : (
-        /* Altre tab — top bar stile handoff: [logo] · [titolo serif] · [azione] */
-        <header className="flex items-center justify-between px-4 pt-12 pb-3 shrink-0"
+        /* Altre tab — top bar stile handoff: solo titolo serif */
+        <header className="flex items-center px-5 pt-12 pb-3 shrink-0"
           style={{ backgroundColor: '#F6ECC8' }}>
-
-          {/* Left: logo pill */}
-          <div className="w-9 h-9 rounded-[12px] flex items-center justify-center overflow-hidden shrink-0"
-            style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-            <img src="/bertie-logo.svg" alt="Bertie" style={{ width: 28, height: 28, objectFit: 'contain' }} />
-          </div>
-
-          {/* Center: title */}
           {PAGE_TITLES[tab] && (
             <h1 style={{
               fontFamily: 'var(--font-display)',
@@ -1292,12 +1284,6 @@ export default function Dashboard() {
               </em>
             </h1>
           )}
-
-          {/* Right: action button */}
-          <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0"
-            style={{ backgroundColor: '#2A2C2C', color: '#F6ECC8' }}>
-            {PAGE_RIGHT_ICONS[tab]}
-          </div>
         </header>
       )}
 
