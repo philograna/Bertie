@@ -30,7 +30,7 @@ export default function Home() {
           <img
             src="/bertie-wordmark.svg"
             alt="Bertie"
-            style={{ width: 220, marginBottom: 28 }}
+            style={{ width: 320, marginBottom: 8 }}
           />
 
           {/* Eyebrow line */}
