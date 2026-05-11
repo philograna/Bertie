@@ -21,6 +21,7 @@ export default function Onboarding() {
   const navigate = useNavigate()
   const [step, setStep]       = useState(1)
   const [saving, setSaving]   = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [dog, setDog]         = useState({ nome: '', razza: '', eta: '', sesso: '', peso: '' })
   const set = (k, v) => setDog((d) => ({ ...d, [k]: v }))
 
@@ -45,12 +46,16 @@ export default function Onboarding() {
       // Upsert: aggiorna se esiste già un cane per questo utente, altrimenti inserisce
       const { error } = await supabase
         .from('dogs')
-        .upsert(payload, { onConflict: 'user_id' })
+        .upsert(payload, { onConflict: 'user_id', ignoreDuplicates: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
       setStep(3)
     } catch (err) {
       console.error('Errore salvataggio:', err)
+      setSaveError(err.message || 'Errore durante il salvataggio')
     } finally {
       setSaving(false)
     }
@@ -191,10 +196,16 @@ export default function Onboarding() {
               </span>
             </div>
 
+            {saveError && (
+              <p className="mt-3 text-xs text-center px-3 py-2 rounded-[10px]"
+                style={{ backgroundColor: 'rgba(176,64,64,0.1)', color: '#B04040' }}>
+                ⚠️ {saveError}
+              </p>
+            )}
             <button
-              onClick={() => canNext2 && handleSave()}
+              onClick={() => { setSaveError(''); canNext2 && handleSave() }}
               disabled={!canNext2 || saving}
-              className="mt-6 w-full py-4 rounded-btn font-semibold text-base disabled:opacity-40 flex items-center justify-center gap-2"
+              className="mt-4 w-full py-4 rounded-btn font-semibold text-base disabled:opacity-40 flex items-center justify-center gap-2"
               style={{ backgroundColor: G.gold, color: '#FFFFFF' }}
             >
               {saving && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
