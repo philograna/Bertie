@@ -87,7 +87,7 @@ export default function Home() {
             lineHeight: 1.05,
             letterSpacing: '-0.02em',
             color: '#2A2C2C',
-            margin: '0 0 14px',
+            margin: '0 32px 14px',
           }}>
             Un solo posto<br />
             per tutta la vita<br />
