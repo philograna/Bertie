@@ -879,7 +879,7 @@ function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeE
       {/* ── Footer ── */}
       <p className="text-center" style={{ fontFamily: 'var(--font-mono)', fontSize: 10,
         color: '#A7A8A8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-        Bertie · v0.2 · ex Kompet
+        Bertie · v0.2
       </p>
     </div>
   )
