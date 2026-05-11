@@ -763,8 +763,8 @@ function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeE
       if (!upErr) {
         const { data: { publicUrl } } = supabase.storage.from('dog-photos').getPublicUrl(path)
         setPhotoUrl(publicUrl)
-        onPhotoChange?.(publicUrl)
         await supabase.from('dogs').update({ photo_url: publicUrl }).eq('user_id', user.id)
+        onPhotoChange?.(publicUrl)  // aggiorna Dashboard DOPO che il DB è scritto
       }
     } finally {
       setUploading(false)
@@ -1135,11 +1135,6 @@ export default function Dashboard() {
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
-
-  // Ricarica quando si passa a Home o Profilo (dati freschi dopo eventuali modifiche)
-  useEffect(() => {
-    if (tab === 'vaccini' || tab === 'profilo') loadUser()
-  }, [tab])
 
   // Ritorno da Stripe con ?upgraded=1
   useEffect(() => {
