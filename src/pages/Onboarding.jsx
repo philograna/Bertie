@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
 import AppShell from '../components/AppShell'
+import { supabase } from '../lib/supabase'
 
 const RAZZE = ['Labrador', 'Golden Retriever', 'Pastore Tedesco', 'Bulldog Fr.', 'Beagle', 'Chihuahua', 'Barboncino', 'Boxer', 'Husky', 'Altro']
 const ETA   = ['< 1 anno', '1 anno', '2 anni', '3 anni', '4 anni', '5 anni', '6 anni', '7+ anni']
@@ -18,12 +19,42 @@ const G = {
 
 export default function Onboarding() {
   const navigate = useNavigate()
-  const [step, setStep] = useState(1)
-  const [dog, setDog] = useState({ nome: '', razza: '', eta: '', sesso: '' })
+  const [step, setStep]       = useState(1)
+  const [saving, setSaving]   = useState(false)
+  const [dog, setDog]         = useState({ nome: '', razza: '', eta: '', sesso: '', peso: '' })
   const set = (k, v) => setDog((d) => ({ ...d, [k]: v }))
 
   const canNext1 = dog.nome.trim() && dog.razza
   const canNext2 = dog.eta && dog.sesso
+
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { navigate('/login'); return }
+
+      const payload = {
+        user_id:   user.id,
+        name:      dog.nome.trim(),
+        breed:     dog.razza,
+        age_label: dog.eta,
+        sex:       dog.sesso,
+        weight:    dog.peso ? parseFloat(dog.peso.replace(',', '.')) : null,
+      }
+
+      // Upsert: aggiorna se esiste già un cane per questo utente, altrimenti inserisce
+      const { error } = await supabase
+        .from('dogs')
+        .upsert(payload, { onConflict: 'user_id' })
+
+      if (error) throw error
+      setStep(3)
+    } catch (err) {
+      console.error('Errore salvataggio:', err)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <AppShell>
@@ -54,10 +85,10 @@ export default function Onboarding() {
           </div>
         </div>
 
-        {/* Step 1 */}
+        {/* Step 1 — Nome + Razza */}
         {step === 1 && (
           <>
-            <h1 className="text-2xl font-extrabold font-nunito mb-1" style={{ color: G.ink }}>
+            <h1 className="text-2xl font-extrabold mb-1" style={{ color: G.ink }}>
               Come si chiama il tuo cane? 🐶
             </h1>
             <p className="text-sm mb-6" style={{ color: G.ink500 }}>Aggiungi il profilo del tuo amico a 4 zampe.</p>
@@ -99,10 +130,10 @@ export default function Onboarding() {
           </>
         )}
 
-        {/* Step 2 */}
+        {/* Step 2 — Età + Sesso + Peso */}
         {step === 2 && (
           <>
-            <h1 className="text-2xl font-extrabold font-nunito mb-1" style={{ color: G.ink }}>
+            <h1 className="text-2xl font-extrabold mb-1" style={{ color: G.ink }}>
               Quanti anni ha {dog.nome}? 🎂
             </h1>
             <p className="text-sm mb-6" style={{ color: G.ink500 }}>Ci aiuta a calcolare i reminder giusti.</p>
@@ -125,7 +156,7 @@ export default function Onboarding() {
             </div>
 
             <p className="text-sm font-semibold mb-3" style={{ color: G.ink }}>Sesso</p>
-            <div className="flex gap-3 mb-auto">
+            <div className="flex gap-3 mb-5">
               {[{ v: 'M', l: '♂ Maschio' }, { v: 'F', l: '♀ Femmina' }].map(({ v, l }) => (
                 <button
                   key={v}
@@ -141,13 +172,33 @@ export default function Onboarding() {
               ))}
             </div>
 
+            <p className="text-sm font-semibold mb-2" style={{ color: G.ink }}>
+              Peso <span style={{ color: G.ink500, fontWeight: 400 }}>(opzionale)</span>
+            </p>
+            <div className="relative mb-auto">
+              <input
+                type="number"
+                inputMode="decimal"
+                placeholder="es. 28.5"
+                value={dog.peso}
+                onChange={(e) => set('peso', e.target.value)}
+                className="w-full px-5 py-4 rounded-card text-base border-0 focus:outline-none focus:ring-2 placeholder-slate-gray pr-14"
+                style={{ backgroundColor: G.cream, color: G.ink }}
+              />
+              <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm font-semibold"
+                style={{ color: G.ink500 }}>
+                kg
+              </span>
+            </div>
+
             <button
-              onClick={() => canNext2 && setStep(3)}
-              disabled={!canNext2}
-              className="mt-6 w-full py-4 rounded-btn font-semibold text-base disabled:opacity-40"
+              onClick={() => canNext2 && handleSave()}
+              disabled={!canNext2 || saving}
+              className="mt-6 w-full py-4 rounded-btn font-semibold text-base disabled:opacity-40 flex items-center justify-center gap-2"
               style={{ backgroundColor: G.gold, color: '#FFFFFF' }}
             >
-              Continua →
+              {saving && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+              {saving ? 'Salvataggio…' : 'Salva →'}
             </button>
           </>
         )}
@@ -157,11 +208,12 @@ export default function Onboarding() {
           <div className="flex flex-col items-center justify-center flex-1 text-center gap-5">
             <div className="text-7xl">🎉</div>
             <div>
-              <h1 className="text-2xl font-extrabold font-nunito mb-2" style={{ color: G.ink }}>
+              <h1 className="text-2xl font-extrabold mb-2" style={{ color: G.ink }}>
                 {dog.nome} è pronto!
               </h1>
               <p className="text-sm" style={{ color: G.ink500 }}>
                 {dog.razza} · {dog.eta} · {dog.sesso === 'M' ? 'Maschio' : 'Femmina'}
+                {dog.peso ? ` · ${dog.peso} kg` : ''}
               </p>
             </div>
             <p className="text-sm max-w-xs" style={{ color: G.ink500 }}>

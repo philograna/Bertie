@@ -94,7 +94,7 @@ function useDailyTip() {
   return { tip, loading: false }
 }
 
-function SaluteView({ dogName, dogRazza, photoUrl, userName }) {
+function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, userName }) {
   const scaduti = vaccini.filter(v => v.scaduto).length
   const { tip, loading: tipLoading } = useDailyTip()
 
@@ -133,7 +133,11 @@ function SaluteView({ dogName, dogRazza, photoUrl, userName }) {
             {dogName || 'Bertie'}
           </p>
           <p style={{ color: 'rgba(255,255,255,0.82)', fontSize: 13, marginTop: 2 }}>
-            {dogRazza || 'Labrador'} · 3 anni · 28,4 kg
+            {[
+              dogRazza,
+              dogAge,
+              dogWeight ? `${dogWeight} kg` : null,
+            ].filter(Boolean).join(' · ') || 'Aggiungi il profilo'}
           </p>
         </div>
       </div>
@@ -1106,6 +1110,9 @@ export default function Dashboard() {
   const [dogName, setDogName]         = useState(null)
   const [dogRazza, setDogRazza]       = useState(null)
   const [dogPhotoUrl, setDogPhotoUrl] = useState(null)
+  const [dogWeight, setDogWeight]     = useState(null)
+  const [dogAge, setDogAge]           = useState(null)
+  const [dogSex, setDogSex]           = useState(null)
   const [userName, setUserName]       = useState(null)
 
   // Carica utente + stato premium + profilo cane
@@ -1120,10 +1127,17 @@ export default function Dashboard() {
     setUserName(name)
     const [{ data: profile }, { data: dog }] = await Promise.all([
       supabase.from('profiles').select('premium').eq('id', u.id).maybeSingle(),
-      supabase.from('dogs').select('name, breed, photo_url').eq('user_id', u.id).maybeSingle(),
+      supabase.from('dogs').select('name, breed, photo_url, weight, age_label, sex').eq('user_id', u.id).maybeSingle(),
     ])
     if (profile) setIsPremium(!!profile.premium)
-    if (dog)     { setDogName(dog.name); setDogRazza(dog.breed); setDogPhotoUrl(dog.photo_url || null) }
+    if (dog) {
+      setDogName(dog.name)
+      setDogRazza(dog.breed)
+      setDogPhotoUrl(dog.photo_url || null)
+      setDogWeight(dog.weight || null)
+      setDogAge(dog.age_label || null)
+      setDogSex(dog.sex || null)
+    }
   }
 
   // Carica al mount
@@ -1221,7 +1235,7 @@ export default function Dashboard() {
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-4 pb-28">
-        {tab === 'vaccini'   && <SaluteView dogName={dogName} dogRazza={dogRazza} photoUrl={dogPhotoUrl} userName={userName} />}
+        {tab === 'vaccini'   && <SaluteView dogName={dogName} dogRazza={dogRazza} photoUrl={dogPhotoUrl} dogWeight={dogWeight} dogAge={dogAge} dogSex={dogSex} userName={userName} />}
         {tab === 'mappa'     && <MappaView />}
         {tab === 'aivet'     && <AIVetView isPremium={isPremium} />}
         {tab === 'diario'    && <LibrettoView dogName={dogName} />}
