@@ -738,24 +738,14 @@ function LibrettoView({ dogName }) {
 }
 
 // ─── Sezione Profilo ────────────────────────────────────────────────────────
-function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeError }) {
-  const [photoUrl, setPhotoUrl]   = useState(null)
-  const [dogName, setDogName]     = useState(null)
-  const [dogRazza, setDogRazza]   = useState(null)
+function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeError,
+                       dogName, dogRazza, photoUrl: initialPhotoUrl, onPhotoChange }) {
+  const [photoUrl, setPhotoUrl]   = useState(initialPhotoUrl)
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef(null)
 
-  useEffect(() => {
-    if (!user) return
-    supabase.from('dogs').select('name, breed, photo_url').eq('user_id', user.id).maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setDogName(data.name || null)
-          setDogRazza(data.breed || null)
-          setPhotoUrl(data.photo_url || null)
-        }
-      })
-  }, [user])
+  // Sincronizza se il parent aggiorna la foto (es. dopo reload)
+  useEffect(() => { setPhotoUrl(initialPhotoUrl) }, [initialPhotoUrl])
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0]
@@ -773,6 +763,7 @@ function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeE
       if (!upErr) {
         const { data: { publicUrl } } = supabase.storage.from('dog-photos').getPublicUrl(path)
         setPhotoUrl(publicUrl)
+        onPhotoChange?.(publicUrl)
         await supabase.from('dogs').update({ photo_url: publicUrl }).eq('user_id', user.id)
       }
     } finally {
@@ -1135,7 +1126,20 @@ export default function Dashboard() {
     if (dog)     { setDogName(dog.name); setDogRazza(dog.breed); setDogPhotoUrl(dog.photo_url || null) }
   }
 
+  // Carica al mount
   useEffect(() => { loadUser() }, [])
+
+  // Ricarica ogni volta che la pagina torna visibile (es. ritorno dall'onboarding)
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') loadUser() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
+
+  // Ricarica quando si passa a Home o Profilo (dati freschi dopo eventuali modifiche)
+  useEffect(() => {
+    if (tab === 'vaccini' || tab === 'profilo') loadUser()
+  }, [tab])
 
   // Ritorno da Stripe con ?upgraded=1
   useEffect(() => {
@@ -1235,6 +1239,10 @@ export default function Dashboard() {
             onUpgrade={handleUpgrade}
             upgrading={upgrading}
             upgradeError={upgradeError}
+            dogName={dogName}
+            dogRazza={dogRazza}
+            photoUrl={dogPhotoUrl}
+            onPhotoChange={(url) => setDogPhotoUrl(url)}
           />
         )}
       </div>
