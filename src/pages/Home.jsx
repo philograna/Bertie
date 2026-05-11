@@ -23,65 +23,17 @@ export default function Home() {
         }}
       >
 
-        {/* ── Status bar placeholder ── */}
-        <div className="flex justify-between items-center px-6 pt-3 pb-1 shrink-0"
-          style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 600, color: '#2A2C2C' }}>
-          <span>9:41</span>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            {/* Signal bars */}
-            <svg width="18" height="12" viewBox="0 0 18 12" fill="#2A2C2C">
-              <rect x="0" y="6" width="3" height="6" rx="0.6"/>
-              <rect x="5" y="3" width="3" height="9" rx="0.6"/>
-              <rect x="10" y="0" width="3" height="12" rx="0.6"/>
-            </svg>
-            {/* Battery */}
-            <svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="#2A2C2C" strokeWidth="1.5">
-              <rect x="0.75" y="0.75" width="20" height="10.5" rx="2.5"/>
-              <rect x="2.5" y="2.5" width="13" height="7" rx="1" fill="#2A2C2C"/>
-              <rect x="22" y="4" width="1.5" height="4" rx="0.5" fill="#2A2C2C"/>
-            </svg>
-          </div>
-        </div>
-
-        {/* ── Top mini bar: logo + brand + language ── */}
-        <div className="flex items-center justify-between px-6 pt-3 pb-0 shrink-0">
-          {/* Brand */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{
-              width: 26, height: 26, borderRadius: 8,
-              backgroundColor: '#FBF6E2',
-              display: 'grid', placeItems: 'center', overflow: 'hidden',
-              boxShadow: '0 0 0 1px rgba(70,73,73,0.08)',
-            }}>
-              <img src="/bertie-logo.svg" alt="Bertie"
-                style={{ width: '92%', height: '92%', objectFit: 'contain' }} />
-            </div>
-            <span style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 20,
-              letterSpacing: '-0.02em',
-              color: '#2A2C2C',
-            }}>
-              Ber<em style={{ fontStyle: 'italic', color: '#D28C45' }}>tie</em>
-            </span>
-          </div>
-          {/* Language pill */}
+        {/* ── Wordmark centrato ── */}
+        <div className="flex items-center justify-center pt-14 pb-2 shrink-0">
           <span style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 10,
-            color: '#464949',
-            textTransform: 'uppercase',
-            letterSpacing: '0.10em',
-            padding: '6px 10px',
-            borderRadius: 999,
-            backgroundColor: 'rgba(255,255,255,0.5)',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 5,
+            fontFamily: 'var(--font-display)',
+            fontSize: 44,
+            fontWeight: 400,
+            letterSpacing: '-0.025em',
+            color: '#2A2C2C',
+            lineHeight: 1,
           }}>
-            {/* Gold dot */}
-            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#E8A859', display: 'inline-block' }} />
-            IT
+            Ber<em style={{ fontStyle: 'italic', color: '#D28C45' }}>tie</em>
           </span>
         </div>
 
