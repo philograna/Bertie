@@ -715,12 +715,13 @@ function LibrettoView({ dogName, dogId }) {
       {/* Tabs interni */}
       <div className="flex gap-2">
         {[
-          { id: 'vaccini', label: '💉 Vaccini' },
-          { id: 'antipar', label: '💊 Antiparassitari' },
+          { id: 'vaccini', label: 'Vaccini' },
+          { id: 'antipar', label: 'Antiparassitari' },
         ].map(t => (
           <button key={t.id} onClick={() => setSezione(t.id)}
-            className="flex-1 py-2 rounded-pill text-xs font-bold transition-colors"
+            className="flex-1 py-2 text-xs font-bold transition-colors"
             style={{
+              borderRadius: 14,
               backgroundColor: sezione === t.id ? '#E8A859' : '#FFFFFF',
               color: sezione === t.id ? '#FFFFFF' : '#A7A8A8',
               boxShadow: sezione === t.id ? 'none' : 'var(--shadow-soft)',
