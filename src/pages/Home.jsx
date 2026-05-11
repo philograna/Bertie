@@ -100,7 +100,7 @@ export default function Home() {
             color: '#464949',
             maxWidth: '28ch',
           }}>
-            Vaccini, salute, mappa dog-friendly — in italiano.
+            Vaccini, salute, mappa dog-friendly.
           </p>
         </div>
 
