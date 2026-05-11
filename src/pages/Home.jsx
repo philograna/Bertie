@@ -1,91 +1,235 @@
-import { Link } from 'react-router-dom'
-import AppShell from '../components/AppShell'
-
-const features = [
-  { bg: 'bg-sky-blue',        emoji: '💉', title: 'Tracker Vaccini',     body: 'Reminder automatici prima di ogni scadenza.', badge: 'Free' },
-  { bg: 'bg-sunbeam-yellow',  emoji: '📍', title: 'Mappa Dog-Friendly',  body: 'Parchi, spiagge e ristoranti in tutta Italia.', badge: 'Free' },
-  { bg: 'bg-sea-mist',        emoji: '🩺', title: 'AI Veterinario',      body: 'Valuta i sintomi del tuo cane con l\'AI.',     badge: 'Premium' },
-  { bg: 'bg-glacier-blue',    emoji: '👥', title: 'Community',           body: 'Passeggiate di gruppo nel tuo quartiere.',    badge: 'Premium' },
-]
+import { useNavigate } from 'react-router-dom'
 
 export default function Home() {
+  const navigate = useNavigate()
+
   return (
-    <AppShell>
-      <div className="flex-1 flex flex-col overflow-y-auto pb-10">
+    <div
+      className="min-h-screen flex flex-col items-center justify-center"
+      style={{ backgroundColor: '#F6ECC8', fontFamily: 'var(--font-sans)' }}
+    >
+      {/* ── Phone-width container ── */}
+      <div
+        className="w-full flex flex-col relative overflow-hidden"
+        style={{
+          maxWidth: 430,
+          minHeight: '100svh',
+          backgroundColor: '#F6ECC8',
+          /* Decorative radial gradients from handoff */
+          backgroundImage: `
+            radial-gradient(420px 280px at 75% 18%, rgba(232,168,89,0.22), transparent 70%),
+            radial-gradient(360px 240px at 15% 78%, rgba(183,115,54,0.10), transparent 65%)
+          `,
+        }}
+      >
 
-        {/* Hero */}
-        <div className="px-6 pt-16 pb-8">
-          <p className="text-4xl mb-4">🐾</p>
-          <h1 className="text-3xl font-extrabold text-ocean-deep font-nunito leading-tight mb-3">
-            Un solo posto<br />per tutta la vita<br />del tuo cane.
-          </h1>
-          <p className="text-sm text-slate-gray mb-8">
-            L'app italiana per proprietari di cani — vaccini, salute, mappa dog-friendly e molto altro. Gratis nel core, Premium a <strong className="text-ocean-deep">€0,99/mese</strong>.
-          </p>
-          <Link
-            to="/registrati"
-            className="block w-full py-4 bg-sky-blue text-true-black font-extrabold text-base rounded-btn text-center"
-          >
-            Aggiungi il tuo cane →
-          </Link>
-          <Link
-            to="/login"
-            className="block w-full py-3.5 mt-3 border-2 border-ocean-deep text-ocean-deep font-extrabold text-base rounded-btn text-center"
-          >
-            Accedi
-          </Link>
-          <p className="text-center text-xs text-slate-gray mt-4">
-            7 milioni di cani in Italia — il loro posto è qui.
-          </p>
+        {/* ── Status bar placeholder ── */}
+        <div className="flex justify-between items-center px-6 pt-3 pb-1 shrink-0"
+          style={{ fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 600, color: '#2A2C2C' }}>
+          <span>9:41</span>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {/* Signal bars */}
+            <svg width="18" height="12" viewBox="0 0 18 12" fill="#2A2C2C">
+              <rect x="0" y="6" width="3" height="6" rx="0.6"/>
+              <rect x="5" y="3" width="3" height="9" rx="0.6"/>
+              <rect x="10" y="0" width="3" height="12" rx="0.6"/>
+            </svg>
+            {/* Battery */}
+            <svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="#2A2C2C" strokeWidth="1.5">
+              <rect x="0.75" y="0.75" width="20" height="10.5" rx="2.5"/>
+              <rect x="2.5" y="2.5" width="13" height="7" rx="1" fill="#2A2C2C"/>
+              <rect x="22" y="4" width="1.5" height="4" rx="0.5" fill="#2A2C2C"/>
+            </svg>
+          </div>
         </div>
 
-        {/* Feature cards */}
-        <div className="px-6 flex flex-col gap-3">
-          {features.map((f) => (
-            <div key={f.title} className={`${f.bg} rounded-card p-5 flex items-start gap-4`}>
-              <span className="text-3xl">{f.emoji}</span>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="font-extrabold text-ocean-deep font-nunito">{f.title}</p>
-                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-tag ${f.badge === 'Free' ? 'bg-off-white text-ocean-deep' : 'bg-ocean-deep text-pale-sand'}`}>
-                    {f.badge}
-                  </span>
-                </div>
-                <p className="text-xs text-ocean-deep opacity-80">{f.body}</p>
-              </div>
+        {/* ── Top mini bar: logo + brand + language ── */}
+        <div className="flex items-center justify-between px-6 pt-3 pb-0 shrink-0">
+          {/* Brand */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              width: 26, height: 26, borderRadius: 8,
+              backgroundColor: '#FBF6E2',
+              display: 'grid', placeItems: 'center', overflow: 'hidden',
+              boxShadow: '0 0 0 1px rgba(70,73,73,0.08)',
+            }}>
+              <img src="/bertie-logo.svg" alt="Bertie"
+                style={{ width: '92%', height: '92%', objectFit: 'contain' }} />
             </div>
-          ))}
+            <span style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 20,
+              letterSpacing: '-0.02em',
+              color: '#2A2C2C',
+            }}>
+              Ber<em style={{ fontStyle: 'italic', color: '#D28C45' }}>tie</em>
+            </span>
+          </div>
+          {/* Language pill */}
+          <span style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            color: '#464949',
+            textTransform: 'uppercase',
+            letterSpacing: '0.10em',
+            padding: '6px 10px',
+            borderRadius: 999,
+            backgroundColor: 'rgba(255,255,255,0.5)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+          }}>
+            {/* Gold dot */}
+            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#E8A859', display: 'inline-block' }} />
+            IT
+          </span>
         </div>
 
-        {/* Personas */}
-        <div className="px-6 mt-6 flex flex-col gap-3">
-          <h2 className="text-lg font-extrabold text-ocean-deep font-nunito">Chi usa Kompet</h2>
-          {[
-            { emoji: '👩', name: 'Giulia, 32 · Milano', quote: '"Usavo 4 app diverse, ora ho tutto qui."' },
-            { emoji: '👨', name: 'Marco, 45 · Roma', quote: '"I reminder vaccini mi hanno salvato più volte."' },
-          ].map((p) => (
-            <div key={p.name} className="bg-off-white rounded-card p-4 flex items-start gap-3">
-              <span className="text-3xl">{p.emoji}</span>
-              <div>
-                <p className="text-sm font-extrabold text-ocean-deep">{p.name}</p>
-                <p className="text-sm text-slate-gray italic mt-0.5">{p.quote}</p>
-              </div>
-            </div>
-          ))}
+        {/* ── Center hero ── */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-4">
+
+          {/* Eyebrow line */}
+          <div style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            textTransform: 'uppercase',
+            letterSpacing: '0.14em',
+            color: '#B77336',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 22,
+          }}>
+            <span style={{ width: 14, height: 1, backgroundColor: '#B77336', display: 'inline-block' }} />
+            L'app italiana per chi ha un cane
+            <span style={{ width: 14, height: 1, backgroundColor: '#B77336', display: 'inline-block' }} />
+          </div>
+
+          {/* Big logo with gold halo */}
+          <div style={{ position: 'relative', width: 180, height: 180, display: 'grid', placeItems: 'center', marginBottom: 26 }}>
+            {/* Halo */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: '50%',
+              background: 'radial-gradient(closest-side, rgba(232,168,89,0.38), transparent 72%)',
+              filter: 'blur(2px)',
+            }} />
+            <img
+              src="/bertie-logo.svg"
+              alt="Bertie"
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 18px 30px rgba(140,85,36,0.28))',
+              }}
+            />
+          </div>
+
+          {/* Headline */}
+          <h2 style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 400,
+            fontSize: 34,
+            lineHeight: 1.05,
+            letterSpacing: '-0.02em',
+            color: '#2A2C2C',
+            margin: '0 0 14px',
+          }}>
+            Un solo posto<br />
+            per tutta la vita<br />
+            del tuo <em style={{ fontStyle: 'italic', color: '#D28C45' }}>cane</em>.
+          </h2>
+
+          {/* Subtitle */}
+          <p style={{
+            margin: 0,
+            fontSize: 13.5,
+            lineHeight: 1.5,
+            color: '#464949',
+            maxWidth: '28ch',
+          }}>
+            Vaccini, salute, mappa dog-friendly — in italiano.
+          </p>
         </div>
 
-        {/* Bottom CTA */}
-        <div className="mx-6 mt-8 bg-sky-blue rounded-card p-6 text-center flex flex-col gap-3">
-          <p className="font-extrabold text-ocean-deep font-nunito text-lg">Pronto a iniziare?</p>
-          <p className="text-xs text-ocean-deep opacity-80">Gratis per sempre nel piano base.</p>
-          <Link
-            to="/registrati"
-            className="block py-3.5 bg-ocean-deep text-pale-sand font-extrabold text-sm rounded-btn"
+        {/* ── CTAs ── */}
+        <div className="px-6 flex flex-col gap-2.5 shrink-0">
+          {/* Primary: dark ink with gold arrow */}
+          <button
+            onClick={() => navigate('/registrati')}
+            style={{
+              width: '100%',
+              padding: '15px 18px',
+              borderRadius: 999,
+              border: 0,
+              fontFamily: 'var(--font-sans)',
+              fontSize: 15,
+              fontWeight: 500,
+              backgroundColor: '#2A2C2C',
+              color: '#F6ECC8',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              cursor: 'pointer',
+            }}
           >
-            Inizia gratis →
-          </Link>
+            Aggiungi il tuo cane
+            {/* Gold circle arrow */}
+            <span style={{
+              width: 22, height: 22, borderRadius: '50%',
+              backgroundColor: '#E8A859',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2A2C2C" strokeWidth="3">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+            </span>
+          </button>
+
+          {/* Ghost: login */}
+          <button
+            onClick={() => navigate('/login')}
+            style={{
+              width: '100%',
+              padding: '15px 18px',
+              borderRadius: 999,
+              border: 0,
+              fontFamily: 'var(--font-sans)',
+              fontSize: 15,
+              fontWeight: 500,
+              backgroundColor: 'transparent',
+              color: '#2A2C2C',
+              boxShadow: 'inset 0 0 0 1.5px #2A2C2C',
+              cursor: 'pointer',
+            }}
+          >
+            Ho già un account · Accedi
+          </button>
         </div>
+
+        {/* ── Footer ── */}
+        <div className="flex items-center justify-between px-6 py-5 shrink-0 mt-2"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 10,
+            color: '#6B6E6E',
+            textTransform: 'uppercase',
+            letterSpacing: '0.10em',
+          }}>
+          <span>
+            <span style={{ color: '#2A2C2C', fontWeight: 500 }}>7M+</span>{' '}cani in Italia
+          </span>
+          <span style={{ color: '#464949', borderBottom: '1px dotted #A7A8A8', paddingBottom: 1, cursor: 'pointer' }}>
+            Privacy
+          </span>
+        </div>
+
       </div>
-    </AppShell>
+    </div>
   )
 }
