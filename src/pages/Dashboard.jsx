@@ -1093,10 +1093,7 @@ function AccessoriView({ dogName, dogRazza }) {
       )}
 
       {/* ── Section header ── */}
-      <div className="flex items-baseline justify-between px-4 mb-2">
-        <p className="font-display" style={{ fontSize: 20, letterSpacing: '-0.015em', color: '#2A2C2C' }}>
-          Per il <em style={{ color: '#D28C45' }}>{dogRazza || 'tuo cane'}</em>
-        </p>
+      <div className="flex justify-end px-4 mb-2">
         <span style={{ fontSize: 9, fontWeight: 700, color: '#B77336', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
           Vedi tutti →
         </span>
@@ -1156,7 +1153,22 @@ function AccessoriView({ dogName, dogRazza }) {
 }
 
 // ─── Layout principale ──────────────────────────────────────────────────────
-const TITLES = { vaccini: 'Salute', mappa: 'Mappa 📍', aivet: 'AI Veterinario', diario: 'Libretto', accessori: 'Shop 🛍️', profilo: 'Profilo' }
+// Titoli in stile handoff: Instrument Serif 26px, parte finale in corsivo oro
+const PAGE_TITLES = {
+  mappa:     { pre: 'Map',    post: 'pa'   },
+  aivet:     { pre: 'AI ',    post: 'Vet'  },
+  diario:    { pre: 'Libret', post: 'to'   },
+  accessori: { pre: 'Acces',  post: 'sori' },
+  profilo:   { pre: 'Profi',  post: 'lo'   },
+}
+// Pulsante azione destra per tab
+const PAGE_RIGHT_ICONS = {
+  mappa:     <MapPin size={16} />,
+  aivet:     <Stethoscope size={16} />,
+  diario:    <Plus size={16} />,
+  accessori: <ShoppingBag size={16} />,
+  profilo:   <Dog size={16} />,
+}
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -1253,14 +1265,38 @@ export default function Dashboard() {
         /* Home tab — solo safe-area, niente header visibile */
         <div className="shrink-0 pt-12" style={{ backgroundColor: '#F6ECC8' }} />
       ) : (
-        /* Altre tab — header con titolo, senza campanella */
-        <header className="flex items-center px-5 pt-12 pb-3 shrink-0"
+        /* Altre tab — top bar stile handoff: [logo] · [titolo serif] · [azione] */
+        <header className="flex items-center justify-between px-4 pt-12 pb-3 shrink-0"
           style={{ backgroundColor: '#F6ECC8' }}>
-          <div>
-            <p className="text-xs font-semibold" style={{ color: '#E8A859', letterSpacing: '0.04em' }}>🐾 Bertie</p>
-            <h1 className="text-xl font-extrabold font-display" style={{ color: '#2A2C2C' }}>
-              {TITLES[tab]}
+
+          {/* Left: logo pill */}
+          <div className="w-9 h-9 rounded-[12px] flex items-center justify-center overflow-hidden shrink-0"
+            style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+            <img src="/bertie-logo.svg" alt="Bertie" style={{ width: 28, height: 28, objectFit: 'contain' }} />
+          </div>
+
+          {/* Center: title */}
+          {PAGE_TITLES[tab] && (
+            <h1 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 26,
+              fontWeight: 400,
+              letterSpacing: '-0.02em',
+              color: '#2A2C2C',
+              margin: 0,
+              lineHeight: 1,
+            }}>
+              {PAGE_TITLES[tab].pre}
+              <em style={{ fontStyle: 'italic', color: '#D28C45' }}>
+                {PAGE_TITLES[tab].post}
+              </em>
             </h1>
+          )}
+
+          {/* Right: action button */}
+          <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0"
+            style={{ backgroundColor: '#2A2C2C', color: '#F6ECC8' }}>
+            {PAGE_RIGHT_ICONS[tab]}
           </div>
         </header>
       )}
