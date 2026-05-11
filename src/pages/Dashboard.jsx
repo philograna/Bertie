@@ -823,9 +823,9 @@ function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeE
 
         <button
           onClick={() => navigate('/onboarding')}
-          className="px-5 py-2.5 rounded-pill text-sm font-semibold relative z-10"
+          className="px-5 py-2.5 text-sm font-semibold relative z-10"
           style={{ backgroundColor: 'rgba(255,255,255,0.22)', color: '#FFFFFF',
-            border: '1px solid rgba(255,255,255,0.35)' }}
+            border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999 }}
         >
           {dogName ? 'Modifica profilo' : '+ Aggiungi profilo'}
         </button>
