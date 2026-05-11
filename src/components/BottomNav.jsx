@@ -1,11 +1,11 @@
-import { MapPin, Stethoscope, BookOpen, Dog, ShoppingBag } from 'lucide-react'
+import { Home, MapPin, Stethoscope, BookOpen, ShoppingBag } from 'lucide-react'
 
-// Icona logo Bertie per il tab Home
+// Icona logo Bertie per il tab Profilo
 function BertieLogoIcon({ size = 20, active }) {
   return (
     <img
       src="/bertie-logo.svg"
-      alt="Home"
+      alt="Profilo"
       style={{
         width: size,
         height: size,
@@ -19,12 +19,12 @@ function BertieLogoIcon({ size = 20, active }) {
 }
 
 const ALL_TABS = [
-  { id: 'vaccini',   icon: null,        label: 'Home',    premium: false, isLogo: true },
-  { id: 'mappa',     icon: MapPin,      label: 'Mappa',   premium: false },
-  { id: 'aivet',     icon: Stethoscope, label: 'AI Vet',  premium: true  },
+  { id: 'vaccini',   icon: Home,        label: 'Home',     premium: false },
+  { id: 'aivet',     icon: Stethoscope, label: 'AI Vet',   premium: true  },
   { id: 'diario',    icon: BookOpen,    label: 'Libretto', premium: false },
-  { id: 'accessori', icon: ShoppingBag, label: 'Shop',    premium: false },
-  { id: 'profilo',   icon: Dog,         label: 'Profilo', premium: false },
+  { id: 'accessori', icon: ShoppingBag, label: 'Shop',     premium: false },
+  { id: 'mappa',     icon: MapPin,      label: 'Mappa',    premium: false },
+  { id: 'profilo',   icon: null,        label: 'Profilo',  premium: false, isLogo: true },
 ]
 
 export default function BottomNav({ active, onChange, isPremium, notifiche = 0 }) {
