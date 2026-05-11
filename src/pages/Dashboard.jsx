@@ -733,6 +733,68 @@ function LibrettoView({ dogName }) {
   )
 }
 
+// ─── Ad Banner ──────────────────────────────────────────────────────────────
+const ADS = [
+  {
+    brand:   'Monge',
+    emoji:   '🥩',
+    color:   '#FBF6E2',
+    accent:  '#B77336',
+    tagline: 'Cibo naturale per cani felici.',
+    cta:     'Scopri',
+    url:     'https://www.monge.it',
+  },
+  {
+    brand:   'Ferplast',
+    emoji:   '🛁',
+    color:   '#EEF4FB',
+    accent:  '#3A6EA8',
+    tagline: 'Accessori pensati per il tuo cane.',
+    cta:     'Vedi prodotti',
+    url:     'https://www.ferplast.com',
+  },
+  {
+    brand:   'MioDottore',
+    emoji:   '🩺',
+    color:   '#F0FBF4',
+    accent:  '#2E7D52',
+    tagline: 'Prenota il veterinario vicino a te.',
+    cta:     'Prenota ora',
+    url:     'https://www.miodottore.it',
+  },
+]
+
+function AdBanner() {
+  const ad = ADS[Math.floor(Date.now() / 60000) % ADS.length]
+  return (
+    <div className="rounded-[18px] overflow-hidden"
+      style={{ backgroundColor: ad.color, border: '1.5px solid rgba(0,0,0,0.06)' }}>
+      <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, textTransform: 'uppercase',
+          letterSpacing: '0.12em', color: '#A7A8A8' }}>
+          Sponsorizzato
+        </span>
+        <span style={{ fontSize: 9, color: '#A7A8A8' }}>✕</span>
+      </div>
+      <div className="px-4 pb-4 flex items-center gap-4">
+        <div className="w-14 h-14 rounded-[14px] flex items-center justify-center text-3xl shrink-0"
+          style={{ backgroundColor: 'rgba(0,0,0,0.05)' }}>
+          {ad.emoji}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-sm" style={{ color: '#2A2C2C' }}>{ad.brand}</p>
+          <p className="text-xs mt-0.5" style={{ color: '#6B6E6E', lineHeight: 1.35 }}>{ad.tagline}</p>
+        </div>
+        <a href={ad.url} target="_blank" rel="noopener noreferrer"
+          className="shrink-0 px-3.5 py-2 rounded-pill text-xs font-semibold"
+          style={{ backgroundColor: ad.accent, color: '#FFFFFF' }}>
+          {ad.cta}
+        </a>
+      </div>
+    </div>
+  )
+}
+
 // ─── Sezione Profilo ────────────────────────────────────────────────────────
 function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeError }) {
   const [photoUrl, setPhotoUrl]   = useState(null)
@@ -832,69 +894,8 @@ function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeE
         </button>
       </div>
 
-      {/* ── Premium card ── */}
-      {!isPremium && (
-        <div className="rounded-[20px] overflow-hidden"
-          style={{ backgroundColor: '#2A2C2C' }}>
-          <div className="px-5 pt-5 pb-4">
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#E8A859',
-              textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
-              Bertie completo
-            </p>
-            <p style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: '#FFFFFF',
-              letterSpacing: '-0.015em', lineHeight: 1.1, marginBottom: 4 }}>
-              Premium <em style={{ color: '#E8A859' }}>€0,99</em>
-              <span style={{ fontFamily: 'var(--font-sans)', fontSize: 12,
-                color: 'rgba(255,255,255,0.5)', fontStyle: 'normal' }}>/mese</span>
-            </p>
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {['AI Vet', 'Passaporto EU', 'Groomer', 'Community', 'Illimitati'].map(f => (
-                <span key={f} className="text-[10px] font-semibold px-2.5 py-1 rounded-pill"
-                  style={{ backgroundColor: 'rgba(232,168,89,0.18)', color: '#E8A859' }}>
-                  · {f}
-                </span>
-              ))}
-            </div>
-          </div>
-          {upgradeError && (
-            <p className="mx-5 mb-3 text-xs font-semibold px-3 py-2 rounded-[12px]"
-              style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}>
-              ⚠️ {upgradeError}
-            </p>
-          )}
-          <div className="px-5 pb-5">
-            <button
-              onClick={onUpgrade}
-              disabled={upgrading}
-              className="w-full py-3.5 rounded-pill font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-70 transition-opacity"
-              style={{ backgroundColor: '#E8A859', color: '#FFFFFF',
-                boxShadow: '0 6px 16px -4px rgba(232,168,89,0.5)' }}
-            >
-              {upgrading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-              {upgrading ? 'Apertura checkout…' : '⭐ Attiva Premium — €0,99/mese'}
-            </button>
-            <p className="text-center text-[10px] mt-2" style={{ color: 'rgba(255,255,255,0.35)' }}>
-              Annulla in qualsiasi momento
-            </p>
-          </div>
-        </div>
-      )}
-
-      {isPremium && (
-        <div className="rounded-[18px] px-4 py-3.5 flex items-center gap-3"
-          style={{ backgroundColor: '#FBF6E2', border: '1.5px solid #EFE0A8' }}>
-          <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 text-lg"
-            style={{ backgroundColor: '#F6ECC8' }}>⭐</div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold" style={{ color: '#2A2C2C' }}>Bertie Premium attivo</p>
-            <p className="text-xs" style={{ color: '#6B6E6E' }}>€0,99/mese · Rinnovo automatico</p>
-          </div>
-          <span className="text-[10px] font-bold px-2.5 py-1 rounded-pill"
-            style={{ backgroundColor: '#E8A859', color: '#FFFFFF' }}>
-            Attivo
-          </span>
-        </div>
-      )}
+      {/* ── Ads ── */}
+      <AdBanner />
 
       {/* ── Settings list ── */}
       <div className="rounded-[18px] overflow-hidden"
