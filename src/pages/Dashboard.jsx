@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Bell, Plus, ChevronRight, Send, Lock, Syringe, MapPin, BookOpen, Dog, Camera } from 'lucide-react'
+import { Plus, ChevronRight, Send, Lock, Syringe, MapPin, BookOpen, Dog, Camera } from 'lucide-react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -24,10 +24,20 @@ const vaccini = [
 ]
 
 
-const diario = [
-  { data: '28 Apr 2025', tipo: '🩺', label: 'Visita',   titolo: 'Visita annuale',       note: 'Tutto ok. Peso: 28 kg.' },
-  { data: '10 Mar 2025', tipo: '💊', label: 'Farmaco',  titolo: 'Antiparassitario',     note: 'Frontline applicato.' },
-  { data: '02 Feb 2025', tipo: '⚠️', label: 'Sintomo',  titolo: 'Zoppia lieve',         note: 'Risolta in 3 giorni.' },
+// Cronologia vaccini (storico somministrazioni)
+const storicoVaccini = [
+  { data: '12 Giu 2024', nome: 'Polivalente DHPP',  lotto: 'A4521X', veterinario: 'Dr. Rossi', prossima: '12 Giu 2025' },
+  { data: '03 Mar 2024', nome: 'Rabbia',             lotto: 'R8812B', veterinario: 'Dr. Rossi', prossima: '03 Mar 2025' },
+  { data: '20 Ago 2024', nome: 'Leishmaniosi',       lotto: 'L2290C', veterinario: 'Dr. Bianchi', prossima: '20 Ago 2025' },
+  { data: '15 Gen 2024', nome: 'Polivalente DHPP',  lotto: 'A3310Y', veterinario: 'Dr. Rossi', prossima: '12 Giu 2024' },
+]
+
+// Cronologia antiparassitari
+const storicoAntipar = [
+  { data: '01 Apr 2025', prodotto: 'Frontline Combo L',   tipo: 'Spot-on',   note: 'Applicato tra le scapole' },
+  { data: '01 Gen 2025', prodotto: 'Advantix 25–40 kg',   tipo: 'Spot-on',   note: '' },
+  { data: '01 Ott 2024', prodotto: 'Frontline Combo L',   tipo: 'Spot-on',   note: 'Applicato tra le scapole' },
+  { data: '01 Lug 2024', prodotto: 'NexGard Spectra XL',  tipo: 'Compresse', note: 'Somministrato con il pasto' },
 ]
 
 // ─── Home / Salute ──────────────────────────────────────────────────────────
@@ -382,16 +392,19 @@ function MappaView() {
   const defaultCenter = [41.9028, 12.4964]
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Mappa */}
+    <div className="flex flex-col gap-3">
+
+      {/* ── Mappa ── */}
       {!userPos && !geoError ? (
-        <div className="rounded-card h-44 flex flex-col items-center justify-center gap-2"
+        <div className="h-48 rounded-[20px] flex flex-col items-center justify-center gap-2"
           style={{ backgroundColor: '#EFE0A8' }}>
-          <div className="w-6 h-6 border-2 border-sky-blue border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-slate-gray">Rilevando posizione...</p>
+          <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: '#B77336', borderTopColor: 'transparent' }} />
+          <p className="text-xs font-medium" style={{ color: '#8C5524' }}>Rilevando posizione…</p>
         </div>
       ) : (
-        <div style={{ height: 200, borderRadius: 20, overflow: 'hidden' }}>
+        <div style={{ height: 210, borderRadius: 20, overflow: 'hidden',
+          boxShadow: '0 1px 0 rgba(0,0,0,.02), 0 12px 28px -18px rgba(140,85,36,.28)' }}>
           <MapContainer
             center={userPos ? [userPos.lat, userPos.lng] : defaultCenter}
             zoom={15}
@@ -412,60 +425,73 @@ function MappaView() {
       )}
 
       {geoError && (
-        <p className="text-xs text-slate-gray px-1">📍 Posizione non disponibile</p>
+        <p className="text-xs font-medium px-1" style={{ color: '#6B6E6E' }}>
+          📍 Posizione non disponibile — attiva la geolocalizzazione
+        </p>
       )}
 
-      {/* Filtri */}
+      {/* ── Chip filtri ── */}
       <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
         {FILTRI.map(f => (
           <button
             key={f.id}
             onClick={() => setFiltro(f.id)}
-            className="shrink-0 px-4 py-1.5 rounded-tag text-sm font-bold transition-colors"
-            style={{
-              backgroundColor: filtro === f.id ? '#E8A859' : '#F6ECC8',
-              color: filtro === f.id ? '#FFFFFF' : '#6B6E6E',
-            }}
+            className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-pill transition-colors"
+            style={filtro === f.id
+              ? { backgroundColor: '#2A2C2C', color: '#F6ECC8', border: '1px solid #2A2C2C' }
+              : { backgroundColor: 'rgba(255,255,255,0.7)', color: '#464949', border: '1px solid rgba(70,73,73,0.10)' }}
           >
             {f.label}
           </button>
         ))}
       </div>
 
-      {/* Lista */}
+      {/* ── Loading ── */}
       {loading && (
-        <div className="flex items-center gap-2 py-4 justify-center">
-          <div className="w-4 h-4 border-2 border-sky-blue border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-slate-gray">Cerco luoghi nelle vicinanze...</p>
+        <div className="flex items-center justify-center gap-2 py-6">
+          <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: '#E8A859', borderTopColor: 'transparent' }} />
+          <p className="text-xs font-medium" style={{ color: '#6B6E6E' }}>
+            Cerco luoghi nelle vicinanze…
+          </p>
         </div>
       )}
 
+      {/* ── Lista risultati ── */}
       {!loading && (
         <div className="flex flex-col gap-2">
           {visibili.length === 0 && userPos && (
-            <div className="text-center py-8">
-              <p className="text-2xl mb-2">🐾</p>
-              <p className="text-sm font-bold text-ocean-deep">Nessun luogo trovato</p>
-              <p className="text-xs text-slate-gray mt-1">Entro {MAX_KM} km · prova un'altra categoria</p>
+            <div className="flex flex-col items-center py-10 gap-2">
+              <span style={{ fontSize: 36 }}>🐾</span>
+              <p className="text-sm font-semibold" style={{ color: '#2A2C2C' }}>Nessun luogo trovato</p>
+              <p className="text-xs" style={{ color: '#6B6E6E' }}>Entro {MAX_KM} km · prova un'altra categoria</p>
             </div>
           )}
           {visibiliPaginati.map(l => (
-            <div key={l.id} className="flex items-center justify-between p-4 bg-off-white rounded-card">
+            <div key={l.id}
+              className="flex items-center justify-between px-4 py-3.5 rounded-[16px]"
+              style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
               <div className="flex items-center gap-3">
-                <span className="text-2xl">{l.emoji}</span>
+                <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: '#FBF6E2', fontSize: 20 }}>
+                  {l.emoji}
+                </div>
                 <div>
-                  <p className="text-sm font-bold text-ocean-deep">{l.nome}</p>
-                  <p className="text-xs text-slate-gray">{l.indirizzo ? `${l.indirizzo} · ` : ''}{l.km.toFixed(2)} km</p>
+                  <p className="text-sm font-semibold" style={{ color: '#2A2C2C' }}>{l.nome}</p>
+                  <p className="text-xs mt-0.5" style={{ color: '#6B6E6E' }}>
+                    {l.indirizzo ? `${l.indirizzo} · ` : ''}{l.km.toFixed(2)} km
+                  </p>
                 </div>
               </div>
-              <ChevronRight size={14} className="text-slate-gray" />
+              <ChevronRight size={14} style={{ color: '#A7A8A8' }} />
             </div>
           ))}
           {hasMore && (
             <button
               onClick={() => setPagina(p => p + 1)}
-              className="w-full py-3 rounded-card text-sm font-bold"
-              style={{ backgroundColor: '#FBF6E2', color: '#6B6E6E', border: '1.5px solid #EFE0A8' }}
+              className="w-full py-3 rounded-[16px] text-xs font-semibold"
+              style={{ backgroundColor: 'rgba(255,255,255,0.5)', color: '#6B6E6E',
+                border: '1px dashed rgba(70,73,73,0.18)' }}
             >
               Mostra altri ({visibili.length - visibiliPaginati.length} rimasti)
             </button>
@@ -479,32 +505,74 @@ function MappaView() {
 // ─── Sezione AI Vet ─────────────────────────────────────────────────────────
 function AIVetView({ isPremium }) {
   const [msgs, setMsgs] = useState([
-    { role: 'ai', text: 'Ciao! Sono il vet AI di Bertie 🐾 Descrivi i sintomi del tuo cane.' },
+    { role: 'ai', text: 'Ciao! Sono il vet AI di Bertie 🐾 Descrivi i sintomi del tuo cane e ti aiuto a capire cosa fare.' },
   ])
   const [input, setInput] = useState('')
   const [count, setCount] = useState(0)
 
   if (!isPremium) {
     return (
-      <div className="flex flex-col items-center gap-5 text-center py-6 px-2">
-        <div className="w-20 h-20 rounded-full bg-glacier-blue flex items-center justify-center">
-          <Lock size={32} className="text-sky-blue" />
-        </div>
-        <div>
-          <h3 className="text-xl font-extrabold text-ocean-deep font-nunito mb-1">AI Veterinario</h3>
-          <p className="text-sm text-slate-gray">Valuta i sintomi del tuo cane con l'intelligenza artificiale.</p>
-        </div>
-        <div className="w-full bg-off-white rounded-card p-4 text-left flex flex-col gap-2">
-          {['10 domande/mese con AI', 'Prenotazione groomer', 'Passaporto digitale EU', 'Community locale', 'Animali illimitati'].map((f) => (
-            <p key={f} className="text-sm text-ocean-deep flex items-center gap-2">
-              <span className="text-sky-blue font-extrabold">✓</span> {f}
+      <div className="flex flex-col gap-5 pb-4">
+
+        {/* Hero gate */}
+        <div className="rounded-[22px] p-6 flex flex-col items-center gap-4 text-center relative overflow-hidden"
+          style={{ backgroundColor: '#2A2C2C' }}>
+          {/* decorative circle */}
+          <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180,
+            backgroundColor: 'rgba(232,168,89,0.10)', borderRadius: '50%', pointerEvents: 'none' }} />
+          <div className="w-16 h-16 rounded-[18px] flex items-center justify-center shrink-0"
+            style={{ backgroundColor: 'rgba(232,168,89,0.15)' }}>
+            <Lock size={28} style={{ color: '#E8A859' }} />
+          </div>
+          <div>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#E8A859',
+              textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
+              Premium · €0,99/mese
             </p>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: '#FFFFFF',
+              letterSpacing: '-0.015em', lineHeight: 1.1, margin: '0 0 8px' }}>
+              AI <em>Veterinario</em>
+            </h3>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
+              Descrivi i sintomi del tuo cane e ricevi una valutazione immediata.
+            </p>
+          </div>
+        </div>
+
+        {/* Feature list */}
+        <div className="rounded-[18px] overflow-hidden"
+          style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
+          {[
+            { icon: '🩺', label: 'AI Veterinario', sub: '10 domande al mese' },
+            { icon: '✂️', label: 'Prenota groomer', sub: 'Dog sitter e toelettatori vicino a te' },
+            { icon: '🛂', label: 'Passaporto EU',   sub: 'Digitale, per viaggiare con il tuo cane' },
+            { icon: '🐾', label: 'Community locale',sub: 'Passeggiate di gruppo e amici a 4 zampe' },
+            { icon: '🐶', label: 'Animali illimitati', sub: 'Aggiungi tutti i tuoi cani' },
+          ].map((f, i, arr) => (
+            <div key={f.label} className="flex items-center gap-3 px-4 py-3"
+              style={{ borderBottom: i < arr.length - 1 ? '1px solid #F6ECC8' : 'none' }}>
+              <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 text-base"
+                style={{ backgroundColor: '#FBF6E2' }}>{f.icon}</div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold" style={{ color: '#2A2C2C' }}>{f.label}</p>
+                <p className="text-xs" style={{ color: '#6B6E6E' }}>{f.sub}</p>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E8A859" strokeWidth="2.5">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            </div>
           ))}
         </div>
-        <button className="w-full py-4 bg-sky-blue text-true-black font-extrabold text-base rounded-btn">
+
+        {/* CTA */}
+        <button className="w-full py-4 rounded-pill font-semibold text-sm"
+          style={{ backgroundColor: '#E8A859', color: '#FFFFFF',
+            boxShadow: '0 8px 20px -6px rgba(232,168,89,0.55)' }}>
           ⭐ Attiva Premium — €0,99/mese
         </button>
-        <p className="text-xs text-slate-gray">Annulla in qualsiasi momento</p>
+        <p className="text-center text-xs" style={{ color: '#A7A8A8', marginTop: -8 }}>
+          Annulla in qualsiasi momento
+        </p>
       </div>
     )
   }
@@ -513,7 +581,7 @@ function AIVetView({ isPremium }) {
     if (!input.trim() || count >= 10) return
     setMsgs((m) => [...m,
       { role: 'user', text: input },
-      { role: 'ai', text: 'Grazie. Ti consiglio di monitorare per 24 ore. Se i sintomi persistono, contatta il tuo veterinario. Hai altri dettagli?' },
+      { role: 'ai', text: 'Grazie. Ti consiglio di monitorare la situazione per 24 ore. Se i sintomi persistono, contatta il tuo veterinario di fiducia. Hai altri dettagli da aggiungere?' },
     ])
     setCount((c) => c + 1)
     setInput('')
@@ -521,52 +589,146 @@ function AIVetView({ isPremium }) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Counter */}
+      <div className="flex items-center justify-between mb-3">
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#B77336',
+          textTransform: 'uppercase', letterSpacing: '0.10em' }}>
+          AI Veterinario
+        </p>
+        <span className="text-xs font-semibold px-2.5 py-1 rounded-pill"
+          style={{ backgroundColor: count >= 10 ? '#FBF6E2' : '#F6ECC8',
+            color: count >= 10 ? '#A7A8A8' : '#B77336' }}>
+          {count}/10 domande
+        </span>
+      </div>
+
+      {/* Chat messages */}
       <div className="flex-1 flex flex-col gap-3 overflow-y-auto pb-4">
         {msgs.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] px-4 py-3 rounded-[18px] text-sm ${m.role === 'user' ? 'bg-sky-blue text-ocean-deep rounded-br-sm' : 'bg-off-white text-ocean-deep rounded-bl-sm'}`}>
+            {m.role === 'ai' && (
+              <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 mr-2 self-end"
+                style={{ backgroundColor: '#F6ECC8' }}>
+                <img src="/bertie-logo.svg" alt="" className="w-full h-full object-contain" />
+              </div>
+            )}
+            <div className="max-w-[78%] px-4 py-3 text-sm leading-relaxed"
+              style={m.role === 'user'
+                ? { backgroundColor: '#2A2C2C', color: '#F6ECC8',
+                    borderRadius: '18px 18px 4px 18px' }
+                : { backgroundColor: '#FFFFFF', color: '#464949',
+                    borderRadius: '18px 18px 18px 4px',
+                    boxShadow: 'var(--shadow-soft)' }}>
               {m.text}
             </div>
           </div>
         ))}
       </div>
+
+      {/* Input */}
       <div className="flex gap-2 pt-2">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && send()}
-          placeholder={count >= 10 ? 'Limite raggiunto' : 'Descrivi i sintomi...'}
+          placeholder={count >= 10 ? 'Limite mensile raggiunto' : 'Descrivi i sintomi…'}
           disabled={count >= 10}
-          className="flex-1 px-4 py-3 rounded-[14px] bg-off-white text-sm text-true-black placeholder-slate-gray border-0 focus:outline-none focus:ring-2 focus:ring-sky-blue disabled:opacity-50"
+          className="flex-1 px-4 py-3 text-sm outline-none disabled:opacity-50"
+          style={{ backgroundColor: '#FFFFFF', borderRadius: 14, border: '1.5px solid #EFE0A8',
+            color: '#2A2C2C', fontFamily: 'var(--font-sans)' }}
         />
-        <button onClick={send} disabled={!input.trim() || count >= 10} className="w-12 h-12 flex items-center justify-center bg-sky-blue rounded-[14px] disabled:opacity-40">
-          <Send size={18} className="text-ocean-deep" />
+        <button onClick={send} disabled={!input.trim() || count >= 10}
+          className="w-12 h-12 flex items-center justify-center rounded-[14px] disabled:opacity-40 shrink-0"
+          style={{ backgroundColor: '#E8A859' }}>
+          <Send size={16} style={{ color: '#FFFFFF' }} />
         </button>
       </div>
-      <p className="text-center text-[10px] text-slate-gray mt-2">{count}/10 domande usate</p>
     </div>
   )
 }
 
 // ─── Sezione Diario ─────────────────────────────────────────────────────────
-function DiarioView() {
+function LibrettoView({ dogName }) {
+  const [sezione, setSezione] = useState('vaccini')
+
   return (
-    <div className="flex flex-col gap-3">
-      <button className="flex items-center justify-center gap-2 w-full py-3.5 border-2 border-dashed border-sky-blue text-sky-blue font-bold text-sm rounded-card">
-        <Plus size={16} /> Nuova voce nel diario
+    <div className="flex flex-col gap-4 pb-4">
+
+      {/* Tabs interni */}
+      <div className="flex gap-2">
+        {[
+          { id: 'vaccini', label: '💉 Vaccini' },
+          { id: 'antipar', label: '💊 Antiparassitari' },
+        ].map(t => (
+          <button key={t.id} onClick={() => setSezione(t.id)}
+            className="flex-1 py-2 rounded-pill text-xs font-bold transition-colors"
+            style={{
+              backgroundColor: sezione === t.id ? '#E8A859' : '#FFFFFF',
+              color: sezione === t.id ? '#FFFFFF' : '#A7A8A8',
+              boxShadow: sezione === t.id ? 'none' : 'var(--shadow-soft)',
+            }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Pulsante aggiungi */}
+      <button className="flex items-center justify-center gap-2 w-full py-3 rounded-card text-sm font-bold"
+        style={{ border: '1.5px dashed #E8A859', color: '#E8A859', backgroundColor: 'transparent' }}>
+        <Plus size={15} />
+        {sezione === 'vaccini' ? 'Aggiungi vaccinazione' : 'Aggiungi trattamento'}
       </button>
-      {diario.map((v, i) => (
-        <div key={i} className="bg-off-white rounded-card p-4 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold px-2.5 py-1 rounded-tag bg-glacier-blue text-ocean-deep">
-              {v.tipo} {v.label}
-            </span>
-            <span className="text-xs text-slate-gray">{v.data}</span>
-          </div>
-          <p className="font-extrabold text-ocean-deep text-sm">{v.titolo}</p>
-          <p className="text-xs text-slate-gray">{v.note}</p>
+
+      {/* Lista vaccini */}
+      {sezione === 'vaccini' && (
+        <div className="rounded-card overflow-hidden"
+          style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
+          {storicoVaccini.map((v, i) => (
+            <div key={i} className="px-4 py-3.5"
+              style={{ borderBottom: i < storicoVaccini.length - 1 ? '1px solid #F6ECC8' : 'none' }}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <p className="text-sm font-bold" style={{ color: '#2A2C2C' }}>{v.nome}</p>
+                  <p className="text-xs mt-0.5" style={{ color: '#6B6E6E' }}>
+                    {v.veterinario} · Lotto {v.lotto}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: '#A7A8A8' }}>
+                    Prossima: {v.prossima}
+                  </p>
+                </div>
+                <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-pill mt-0.5"
+                  style={{ backgroundColor: '#F6ECC8', color: '#B77336' }}>
+                  {v.data}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
+
+      {/* Lista antiparassitari */}
+      {sezione === 'antipar' && (
+        <div className="rounded-card overflow-hidden"
+          style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
+          {storicoAntipar.map((v, i) => (
+            <div key={i} className="px-4 py-3.5"
+              style={{ borderBottom: i < storicoAntipar.length - 1 ? '1px solid #F6ECC8' : 'none' }}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1">
+                  <p className="text-sm font-bold" style={{ color: '#2A2C2C' }}>{v.prodotto}</p>
+                  <p className="text-xs mt-0.5" style={{ color: '#6B6E6E' }}>{v.tipo}</p>
+                  {v.note && <p className="text-xs mt-0.5" style={{ color: '#A7A8A8' }}>{v.note}</p>}
+                </div>
+                <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-pill mt-0.5"
+                  style={{ backgroundColor: '#F6ECC8', color: '#B77336' }}>
+                  {v.data}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
     </div>
   )
 }
@@ -575,16 +737,17 @@ function DiarioView() {
 function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeError }) {
   const [photoUrl, setPhotoUrl]   = useState(null)
   const [dogName, setDogName]     = useState(null)
+  const [dogRazza, setDogRazza]   = useState(null)
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef(null)
 
-  // Carica profilo cane da Supabase
   useEffect(() => {
     if (!user) return
-    supabase.from('dogs').select('name, photo_url').eq('user_id', user.id).maybeSingle()
+    supabase.from('dogs').select('name, breed, photo_url').eq('user_id', user.id).maybeSingle()
       .then(({ data }) => {
         if (data) {
           setDogName(data.name || null)
+          setDogRazza(data.breed || null)
           setPhotoUrl(data.photo_url || null)
         }
       })
@@ -593,12 +756,9 @@ function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeE
   const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-
-    // Preview locale immediata
     const reader = new FileReader()
     reader.onload = (ev) => setPhotoUrl(ev.target.result)
     reader.readAsDataURL(file)
-
     if (!user) return
     setUploading(true)
     try {
@@ -617,138 +777,179 @@ function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeE
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Dog card */}
-      <div className="bg-sky-blue rounded-card p-6 flex flex-col items-center gap-3">
-        {/* Avatar con bottone fotocamera */}
+    <div className="flex flex-col gap-4 pb-4">
+
+      {/* ── Dog hero card ── */}
+      <div className="rounded-[22px] px-5 py-6 flex flex-col items-center gap-4 relative overflow-hidden"
+        style={{ backgroundColor: '#E8A859', boxShadow: '0 12px 32px -12px rgba(232,168,89,.6)' }}>
+        {/* bg circle decoration */}
+        <div style={{ position: 'absolute', right: -50, bottom: -50, width: 200, height: 200,
+          backgroundColor: 'rgba(255,255,255,0.10)', borderRadius: '50%', pointerEvents: 'none' }} />
+
+        {/* Avatar */}
         <div className="relative">
           <div
-            className="w-24 h-24 bg-off-white rounded-full flex items-center justify-center overflow-hidden cursor-pointer"
-            style={{ border: '3px solid #FBF6E2' }}
+            className="w-[88px] h-[88px] rounded-full overflow-hidden cursor-pointer shrink-0"
+            style={{ border: '3px solid rgba(255,255,255,0.6)', backgroundColor: '#F6ECC8' }}
             onClick={() => fileRef.current?.click()}
           >
             {photoUrl
               ? <img src={photoUrl} alt="foto cane" className="w-full h-full object-cover" />
-              : <img src="/bertie-logo.svg" alt="Bertie" className="w-full h-full object-contain" style={{ backgroundColor: '#F6ECC8' }} />
+              : <img src="/bertie-logo.svg" alt="Bertie" className="w-full h-full object-contain" />
             }
           </div>
           <button
             onClick={() => fileRef.current?.click()}
-            className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center shadow-md"
-            style={{ backgroundColor: '#2A2C2C' }}
+            className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: '#2A2C2C', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}
           >
             {uploading
-              ? <div className="w-3.5 h-3.5 border-2 border-pale-sand border-t-transparent rounded-full animate-spin" />
-              : <Camera size={14} className="text-pale-sand" />
+              ? <div className="w-3.5 h-3.5 border-2 border-t-transparent rounded-full animate-spin"
+                  style={{ borderColor: '#F6ECC8', borderTopColor: 'transparent' }} />
+              : <Camera size={13} style={{ color: '#F6ECC8' }} />
             }
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
         </div>
 
-        <p className="font-extrabold text-ocean-deep font-nunito text-lg">
-          {dogName || 'Il mio cane'}
-        </p>
+        <div className="text-center relative z-10">
+          <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 26,
+            color: '#FFFFFF', lineHeight: 1.1, marginBottom: 4 }}>
+            {dogName || 'Il mio cane'}
+          </p>
+          {dogRazza && (
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.80)' }}>{dogRazza}</p>
+          )}
+        </div>
+
         <button
           onClick={() => navigate('/onboarding')}
-          className="px-6 py-2.5 bg-ocean-deep text-pale-sand font-bold text-sm rounded-btn"
+          className="px-5 py-2.5 rounded-pill text-sm font-semibold relative z-10"
+          style={{ backgroundColor: 'rgba(255,255,255,0.22)', color: '#FFFFFF',
+            border: '1px solid rgba(255,255,255,0.35)' }}
         >
           {dogName ? '✏️ Modifica profilo' : '+ Aggiungi profilo'}
         </button>
       </div>
 
-      {/* Card Premium */}
+      {/* ── Premium card ── */}
       {!isPremium && (
-        <div className="rounded-card p-4 flex flex-col gap-3"
-          style={{ background: 'linear-gradient(135deg, #E8A859 0%, #B77336 100%)' }}>
-          <div>
-            <p className="font-extrabold font-nunito text-lg text-white">⭐ Bertie Premium</p>
-            <p className="text-xs text-white opacity-80 mt-0.5">AI Veterinario · Passaporto EU · Groomer · Community</p>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {['AI Vet illimitato', 'Passaporto EU', 'Prenotazione groomer', 'Community locale'].map(f => (
-              <span key={f} className="text-[10px] font-semibold px-2.5 py-1 rounded-tag"
-                style={{ backgroundColor: 'rgba(255,255,255,0.25)', color: '#FFFFFF' }}>
-                ✓ {f}
-              </span>
-            ))}
+        <div className="rounded-[20px] overflow-hidden"
+          style={{ backgroundColor: '#2A2C2C' }}>
+          <div className="px-5 pt-5 pb-4">
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#E8A859',
+              textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
+              Bertie completo
+            </p>
+            <p style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: '#FFFFFF',
+              letterSpacing: '-0.015em', lineHeight: 1.1, marginBottom: 4 }}>
+              Premium <em style={{ color: '#E8A859' }}>€0,99</em>
+              <span style={{ fontFamily: 'var(--font-sans)', fontSize: 12,
+                color: 'rgba(255,255,255,0.5)', fontStyle: 'normal' }}>/mese</span>
+            </p>
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {['AI Vet', 'Passaporto EU', 'Groomer', 'Community', 'Illimitati'].map(f => (
+                <span key={f} className="text-[10px] font-semibold px-2.5 py-1 rounded-pill"
+                  style={{ backgroundColor: 'rgba(232,168,89,0.18)', color: '#E8A859' }}>
+                  · {f}
+                </span>
+              ))}
+            </div>
           </div>
           {upgradeError && (
-            <p className="text-xs font-semibold px-3 py-2 rounded-card"
-              style={{ backgroundColor: 'rgba(0,0,0,0.15)', color: '#FFFFFF' }}>
+            <p className="mx-5 mb-3 text-xs font-semibold px-3 py-2 rounded-[12px]"
+              style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}>
               ⚠️ {upgradeError}
             </p>
           )}
-          <button
-            onClick={onUpgrade}
-            disabled={upgrading}
-            className="w-full py-3.5 rounded-btn font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-70 transition-opacity"
-            style={{ backgroundColor: '#FFFFFF', color: '#E8A859' }}
-          >
-            {upgrading && <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
-            {upgrading ? 'Apertura checkout...' : 'Attiva Premium — €0,99/mese'}
-          </button>
-          <p className="text-[10px] text-center text-white opacity-60">Annulla in qualsiasi momento</p>
+          <div className="px-5 pb-5">
+            <button
+              onClick={onUpgrade}
+              disabled={upgrading}
+              className="w-full py-3.5 rounded-pill font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-70 transition-opacity"
+              style={{ backgroundColor: '#E8A859', color: '#FFFFFF',
+                boxShadow: '0 6px 16px -4px rgba(232,168,89,0.5)' }}
+            >
+              {upgrading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+              {upgrading ? 'Apertura checkout…' : '⭐ Attiva Premium — €0,99/mese'}
+            </button>
+            <p className="text-center text-[10px] mt-2" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              Annulla in qualsiasi momento
+            </p>
+          </div>
         </div>
       )}
 
       {isPremium && (
-        <div className="rounded-card p-4 flex items-center gap-3"
+        <div className="rounded-[18px] px-4 py-3.5 flex items-center gap-3"
           style={{ backgroundColor: '#FBF6E2', border: '1.5px solid #EFE0A8' }}>
-          <span className="text-2xl">⭐</span>
-          <div>
-            <p className="font-bold text-sm" style={{ color: '#2A2C2C' }}>Bertie Premium attivo</p>
+          <div className="w-9 h-9 rounded-[10px] flex items-center justify-center shrink-0 text-lg"
+            style={{ backgroundColor: '#F6ECC8' }}>⭐</div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold" style={{ color: '#2A2C2C' }}>Bertie Premium attivo</p>
             <p className="text-xs" style={{ color: '#6B6E6E' }}>€0,99/mese · Rinnovo automatico</p>
           </div>
-          <span className="ml-auto text-xs font-semibold px-2.5 py-1 rounded-tag"
+          <span className="text-[10px] font-bold px-2.5 py-1 rounded-pill"
             style={{ backgroundColor: '#E8A859', color: '#FFFFFF' }}>
             Attivo
           </span>
         </div>
       )}
 
-      {/* Settings list */}
-      <div className="bg-off-white rounded-card overflow-hidden">
+      {/* ── Settings list ── */}
+      <div className="rounded-[18px] overflow-hidden"
+        style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
         {[
-          { icon: '🔔', label: 'Notifiche' },
-          { icon: '🔒', label: 'Privacy e dati' },
-          { icon: '💬', label: 'Feedback' },
-          { icon: '📤', label: 'Esci' },
+          { icon: '🔔', label: 'Notifiche',       sub: 'Vaccini, antiparassitari, appuntamenti' },
+          { icon: '🔒', label: 'Privacy e dati',  sub: 'I tuoi dati sono al sicuro' },
+          { icon: '💬', label: 'Feedback',         sub: 'Aiutaci a migliorare Bertie' },
+          { icon: '📤', label: 'Esci',             sub: null },
         ].map((item, i, arr) => (
-          <button key={item.label} className={`w-full flex items-center justify-between px-4 py-3.5 active:bg-pale-sand transition-colors ${i < arr.length - 1 ? 'border-b border-glacier-blue' : ''}`}>
-            <span className="flex items-center gap-3 text-sm font-semibold text-ocean-deep">
-              <span>{item.icon}</span> {item.label}
-            </span>
-            <ChevronRight size={14} className="text-slate-gray" />
+          <button key={item.label}
+            className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors"
+            style={{ borderBottom: i < arr.length - 1 ? '1px solid #F6ECC8' : 'none' }}>
+            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 text-base"
+              style={{ backgroundColor: '#FBF6E2' }}>{item.icon}</div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold" style={{ color: '#2A2C2C' }}>{item.label}</p>
+              {item.sub && <p className="text-xs" style={{ color: '#6B6E6E' }}>{item.sub}</p>}
+            </div>
+            <ChevronRight size={14} style={{ color: '#A7A8A8' }} />
           </button>
         ))}
       </div>
+
+      {/* ── Footer ── */}
+      <p className="text-center" style={{ fontFamily: 'var(--font-mono)', fontSize: 10,
+        color: '#A7A8A8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        Bertie · v0.2 · ex Kompet
+      </p>
     </div>
   )
 }
 
 // ─── Sezione Accessori ──────────────────────────────────────────────────────
-const AMAZON_TAG      = import.meta.env.VITE_AMAZON_AFFILIATE_TAG      || 'bertie-21'
-const ARCAPLANET_ID   = import.meta.env.VITE_ARCAPLANET_AFFILIATE_ID   || 'bertie001'
+const AMAZON_TAG    = import.meta.env.VITE_AMAZON_AFFILIATE_TAG    || 'bertie-21'
+const ARCAPLANET_ID = import.meta.env.VITE_ARCAPLANET_AFFILIATE_ID || 'bertie001'
 
 const CATEGORIE_ACC = [
-  { id: 'tutti',     label: 'Tutti' },
-  { id: 'cibo',      label: '🦴 Cibo' },
-  { id: 'salute',    label: '💊 Salute' },
-  { id: 'accessori', label: '🎒 Accessori' },
-  { id: 'giochi',    label: '🎾 Giochi' },
+  { id: 'tutti',         label: 'Tutti' },
+  { id: 'alimentazione', label: 'Alimentazione' },
+  { id: 'passeggiata',   label: 'Passeggiata' },
+  { id: 'gioco',         label: 'Gioco' },
+  { id: 'casa',          label: 'Casa' },
+  { id: 'salute',        label: 'Salute' },
 ]
 
 const PRODOTTI_MOCK = [
-  { id: 1, cat: 'cibo',      nome: 'Royal Canin Adult Labrador',    prezzo: '€54,90', fonte: 'amazon',     emoji: '🦴', razze: ['Labrador', 'Tutti'] },
-  { id: 2, cat: 'cibo',      nome: 'Monge Grain Free Adult',        prezzo: '€28,50', fonte: 'arcaplanet', emoji: '🦴', razze: ['Tutti'] },
-  { id: 3, cat: 'salute',    nome: 'Frontline Combo Spot-On (L)',    prezzo: '€18,90', fonte: 'amazon',     emoji: '💊', razze: ['Tutti'] },
-  { id: 4, cat: 'salute',    nome: 'Advantix 4–10 kg (4 pipette)',   prezzo: '€22,40', fonte: 'arcaplanet', emoji: '💊', razze: ['Tutti'] },
-  { id: 5, cat: 'accessori', nome: 'Guinzaglio retrattile 5 m',      prezzo: '€14,99', fonte: 'amazon',     emoji: '🎒', razze: ['Tutti'] },
-  { id: 6, cat: 'accessori', nome: 'Pettorina Julius-K9 tg. L',      prezzo: '€39,90', fonte: 'arcaplanet', emoji: '🎒', razze: ['Labrador','Golden Retriever','Husky'] },
-  { id: 7, cat: 'giochi',    nome: 'Kong Classic misura L',          prezzo: '€12,50', fonte: 'amazon',     emoji: '🎾', razze: ['Tutti'] },
-  { id: 8, cat: 'giochi',    nome: 'Pallina da riporto Chuckit!',    prezzo: '€8,90',  fonte: 'arcaplanet', emoji: '🎾', razze: ['Labrador','Golden Retriever','Beagle'] },
-  { id: 9, cat: 'cibo',      nome: 'Hill\'s Science Plan Puppy',     prezzo: '€42,00', fonte: 'amazon',     emoji: '🦴', razze: ['Tutti'] },
-  { id:10, cat: 'accessori', nome: 'Cuccia ortopedica M/L',          prezzo: '€59,90', fonte: 'arcaplanet', emoji: '🎒', razze: ['Tutti'] },
+  { id: 1, cat: 'passeggiata',   nome: 'Pettorina ergonomica',       perche: 'Distribuisce la trazione sul petto · 25–30 kg.', prezzo: '€24,90', prezzoOld: '€32,90', deal: '-24%', fonte: 'amazon',     razze: ['Labrador','Tutti'] },
+  { id: 2, cat: 'alimentazione', nome: 'Adult Medium 12 kg',         perche: 'Cani di taglia media, 3–7 anni.',                prezzo: '€39,90', prezzoOld: null,      deal: null,   fonte: 'arcaplanet', razze: ['Tutti'] },
+  { id: 3, cat: 'casa',          nome: 'Memory foam ortopedica',     perche: 'Sfoderabile, lavabile a 30°.',                   prezzo: '€69,00', prezzoOld: '€89,00',  deal: null,   fonte: 'amazon',     razze: ['Tutti'] },
+  { id: 4, cat: 'alimentazione', nome: 'Bocconcini al pollo',        perche: '250 g · per addestramento.',                    prezzo: '€6,49',  prezzoOld: null,      deal: null,   fonte: 'arcaplanet', razze: ['Tutti'] },
+  { id: 5, cat: 'salute',        nome: 'Frontline Combo Spot-On L',  perche: 'Protezione pulci e zecche 4 settimane.',         prezzo: '€18,90', prezzoOld: null,      deal: null,   fonte: 'amazon',     razze: ['Tutti'] },
+  { id: 6, cat: 'gioco',         nome: 'Kong Classic misura L',      perche: 'Resistente al morso forte.',                    prezzo: '€12,50', prezzoOld: null,      deal: null,   fonte: 'amazon',     razze: ['Tutti'] },
+  { id: 7, cat: 'passeggiata',   nome: 'Guinzaglio retrattile 5 m',  perche: 'Freno ergonomico, nastro 5 m.',                 prezzo: '€14,99', prezzoOld: null,      deal: null,   fonte: 'amazon',     razze: ['Tutti'] },
+  { id: 8, cat: 'salute',        nome: 'Advantix 25–40 kg',          perche: '4 pipette spot-on.',                            prezzo: '€22,40', prezzoOld: null,      deal: null,   fonte: 'arcaplanet', razze: ['Tutti'] },
 ]
 
 function buildAffiliateUrl(fonte, nome) {
@@ -757,87 +958,205 @@ function buildAffiliateUrl(fonte, nome) {
   return `https://www.arcaplanet.it/search?query=${encodeURIComponent(nome)}&ref=${ARCAPLANET_ID}`
 }
 
+// Placeholder image con pattern a trattini (come nel handoff)
+function ProdImg({ label, fonte, deal, liked, onLike }) {
+  return (
+    <div className="relative" style={{ aspectRatio: '1/1', backgroundColor: '#FBF6E2',
+      backgroundImage: 'repeating-linear-gradient(135deg, rgba(183,115,54,0.14) 0 6px, transparent 6px 14px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {/* Source badge */}
+      <span className="absolute top-2 left-2 text-[9px] font-bold px-2 py-1 rounded-pill"
+        style={fonte === 'amazon'
+          ? { backgroundColor: '#2A2C2C', color: '#E8A859' }
+          : { backgroundColor: '#E8A859', color: '#2A2C2C' }}>
+        {fonte === 'amazon' ? 'Amazon' : 'Arcaplanet'}
+      </span>
+      {/* Like */}
+      <button onClick={onLike}
+        className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center"
+        style={{ backgroundColor: 'rgba(255,255,255,0.9)' }}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill={liked ? '#E8A859' : 'none'}
+          stroke={liked ? '#E8A859' : '#464949'} strokeWidth="2">
+          <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
+        </svg>
+      </button>
+      {/* Deal badge */}
+      {deal && (
+        <span className="absolute bottom-2 left-2 text-[9px] font-bold px-2 py-1 rounded-[6px]"
+          style={{ backgroundColor: '#2A2C2C', color: '#F6ECC8' }}>{deal}</span>
+      )}
+      {/* Label */}
+      <span className="text-[9px] font-medium px-2 py-1 rounded-[6px]"
+        style={{ backgroundColor: '#F6ECC8', color: '#8C5524', fontFamily: 'var(--font-mono, monospace)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        {label}
+      </span>
+    </div>
+  )
+}
+
 function AccessoriView({ dogName, dogRazza }) {
   const [catFiltro, setCatFiltro] = useState('tutti')
+  const [search, setSearch]       = useState('')
+  const [liked, setLiked]         = useState({})
 
   const prodotti = PRODOTTI_MOCK.filter(p => {
-    const catOk = catFiltro === 'tutti' || p.cat === catFiltro
-    const razzaOk = !dogRazza || p.razze.includes('Tutti') || p.razze.includes(dogRazza)
-    return catOk && razzaOk
+    const catOk    = catFiltro === 'tutti' || p.cat === catFiltro
+    const razzaOk  = !dogRazza || p.razze.includes('Tutti') || p.razze.includes(dogRazza)
+    const searchOk = !search || p.nome.toLowerCase().includes(search.toLowerCase())
+    return catOk && razzaOk && searchOk
   })
 
+  // Hero contestuale: mostra se c'è un antipar. in scadenza entro 7 giorni
+  const antiparInArrivo = vaccini.find(v => !v.scaduto && v.giorni <= 7)
+
   return (
-    <div className="flex flex-col gap-4">
-      {/* Intestazione personalizzata */}
-      <div className="rounded-card p-4" style={{ backgroundColor: '#F6ECC8' }}>
-        <p className="text-xs font-medium mb-0.5" style={{ color: '#6B6E6E' }}>Consigliato per</p>
-        <p className="font-extrabold font-nunito text-lg" style={{ color: '#2A2C2C' }}>
-          {dogName || 'il tuo cane'} {dogRazza ? `· ${dogRazza}` : ''}
-        </p>
+    <div className="flex flex-col gap-0 -mx-4">
+
+      {/* ── Card personalizzazione ── */}
+      <div className="mx-4 mt-2 mb-3 px-3 py-3 rounded-[16px] flex items-center gap-3"
+        style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
+        <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0"
+          style={{ backgroundColor: '#F6ECC8' }}>
+          <img src="/bertie-logo.svg" alt="" className="w-full h-full object-contain" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p style={{ fontSize: 9, fontWeight: 700, color: '#6B6E6E', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono, monospace)' }}>
+            Scelti per
+          </p>
+          <p className="text-sm font-medium truncate" style={{ color: '#2A2C2C' }}>
+            {dogName || 'Bertie'}{' '}
+            <span style={{ color: '#6B6E6E', fontWeight: 400 }}>
+              {dogRazza ? `· ${dogRazza}` : ''}
+            </span>
+          </p>
+        </div>
+        <span style={{ fontSize: 10, fontWeight: 700, color: '#B77336', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono, monospace)' }}>
+          Cambia
+        </span>
       </div>
 
-      {/* Filtri categoria */}
-      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+      {/* ── Search ── */}
+      <div className="mx-4 mb-3 px-3 py-2.5 rounded-[14px] flex items-center gap-2.5"
+        style={{ backgroundColor: 'rgba(255,255,255,0.5)', border: '1px solid rgba(70,73,73,0.08)' }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6E6E" strokeWidth="2">
+          <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+        </svg>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Cerca crocchette, pettorine, snack…"
+          className="flex-1 bg-transparent text-sm outline-none"
+          style={{ color: '#2A2C2C', fontFamily: 'var(--font-sans)' }}
+        />
+      </div>
+
+      {/* ── Chip filtri ── */}
+      <div className="flex gap-2 px-4 pb-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
         {CATEGORIE_ACC.map(c => (
-          <button
-            key={c.id}
-            onClick={() => setCatFiltro(c.id)}
-            className="shrink-0 px-4 py-1.5 rounded-tag text-sm font-medium transition-colors"
-            style={{
-              backgroundColor: catFiltro === c.id ? '#E8A859' : '#F6ECC8',
-              color: catFiltro === c.id ? '#FFFFFF' : '#6B6E6E',
-            }}
-          >
+          <button key={c.id} onClick={() => setCatFiltro(c.id)}
+            className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-pill transition-colors"
+            style={catFiltro === c.id
+              ? { backgroundColor: '#2A2C2C', color: '#F6ECC8', border: '1px solid #2A2C2C' }
+              : { backgroundColor: 'rgba(255,255,255,0.6)', color: '#464949', border: '1px solid rgba(70,73,73,0.08)' }}>
             {c.label}
           </button>
         ))}
       </div>
 
-      {/* Griglia prodotti */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* ── Hero contestuale ── */}
+      {antiparInArrivo && (
+        <div className="mx-4 mb-4 p-4 rounded-[20px] flex gap-3 items-center relative overflow-hidden"
+          style={{ backgroundColor: '#E8A859' }}>
+          <div style={{ position: 'absolute', right: -30, top: -30, width: 140, height: 140,
+            backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: '50%', pointerEvents: 'none' }} />
+          <div className="flex-1 relative z-10">
+            <span className="text-[9px] font-bold px-2 py-1 rounded-pill mb-2 inline-block"
+              style={{ backgroundColor: 'rgba(42,44,44,0.5)', color: '#F6ECC8', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
+              Consigliato · scade tra {antiparInArrivo.giorni}gg
+            </span>
+            <h3 className="font-display text-white mb-1" style={{ fontSize: 20, lineHeight: 1.1 }}>
+              L'<em>antiparassitario</em><br />di {dogName || 'Bertie'} è in arrivo.
+            </h3>
+            <p className="text-xs mb-2.5" style={{ color: 'rgba(255,255,255,0.9)' }}>Pipette spot-on per cani 20–40 kg.</p>
+            <span className="text-xs font-semibold px-3 py-1.5 rounded-pill inline-flex items-center gap-1"
+              style={{ backgroundColor: '#FFFFFF', color: '#D28C45' }}>
+              Riacquista · €24,50 →
+            </span>
+          </div>
+          <div className="shrink-0 w-20 h-20 rounded-[18px] flex items-center justify-center relative z-10"
+            style={{ backgroundColor: '#F6ECC8',
+              backgroundImage: 'repeating-linear-gradient(135deg, rgba(183,115,54,0.18) 0 6px, transparent 6px 14px)',
+              fontFamily: 'monospace', fontSize: 9, color: '#8C5524', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Pipette
+          </div>
+        </div>
+      )}
+
+      {/* ── Section header ── */}
+      <div className="flex items-baseline justify-between px-4 mb-2">
+        <p className="font-display" style={{ fontSize: 20, letterSpacing: '-0.015em', color: '#2A2C2C' }}>
+          Per il <em style={{ color: '#D28C45' }}>{dogRazza || 'tuo cane'}</em>
+        </p>
+        <span style={{ fontSize: 9, fontWeight: 700, color: '#B77336', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
+          Vedi tutti →
+        </span>
+      </div>
+
+      {/* ── Griglia prodotti ── */}
+      <div className="grid grid-cols-2 gap-2.5 px-4 pb-2">
         {prodotti.map(p => (
-          <div key={p.id} className="flex flex-col rounded-card overflow-hidden"
-            style={{ backgroundColor: '#FFFFFF', boxShadow: '0 1px 0 rgba(0,0,0,.02), 0 12px 28px -18px rgba(140,85,36,.20)' }}>
-            {/* Immagine placeholder */}
-            <div className="h-24 flex items-center justify-center text-4xl"
-              style={{ backgroundColor: '#FBF6E2' }}>
-              {p.emoji}
-            </div>
-            <div className="p-3 flex flex-col gap-2 flex-1">
-              {/* Tag fonte */}
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-tag w-fit"
-                style={{
-                  backgroundColor: p.fonte === 'amazon' ? '#EFE0A8' : '#F0B97A',
-                  color: '#2A2C2C',
-                }}>
-                {p.fonte === 'amazon' ? '📦 Amazon' : '🐾 Arcaplanet'}
-              </span>
-              <p className="text-xs font-semibold leading-snug" style={{ color: '#2A2C2C' }}>{p.nome}</p>
-              <p className="text-sm font-bold" style={{ color: '#E8A859' }}>{p.prezzo}</p>
-              <a
-                href={buildAffiliateUrl(p.fonte, p.nome)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-auto w-full py-2 rounded-btn text-xs font-semibold text-center transition-colors"
-                style={{ backgroundColor: '#E8A859', color: '#FFFFFF' }}
-              >
-                Acquista →
-              </a>
+          <div key={p.id} className="flex flex-col rounded-[16px] overflow-hidden"
+            style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
+            <ProdImg
+              label={p.nome.split(' ')[0]}
+              fonte={p.fonte}
+              deal={p.deal}
+              liked={!!liked[p.id]}
+              onLike={() => setLiked(l => ({ ...l, [p.id]: !l[p.id] }))}
+            />
+            <div className="p-3 flex flex-col gap-1 flex-1">
+              <p style={{ fontSize: 9, color: '#6B6E6E', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'monospace' }}>
+                {p.cat.charAt(0).toUpperCase() + p.cat.slice(1)}
+              </p>
+              <p className="font-display" style={{ fontSize: 16, lineHeight: 1.15, letterSpacing: '-0.005em', color: '#2A2C2C' }}>
+                {p.nome}
+              </p>
+              <p style={{ fontSize: 11, color: '#6B6E6E', lineHeight: 1.35 }}>{p.perche}</p>
+              <div className="flex items-center justify-between mt-auto pt-2">
+                <div className="font-display" style={{ fontSize: 16, color: '#2A2C2C', display: 'flex', gap: 5, alignItems: 'baseline' }}>
+                  {p.prezzo}
+                  {p.prezzoOld && (
+                    <s style={{ fontFamily: 'var(--font-sans)', fontSize: 10, color: '#A7A8A8', fontStyle: 'normal' }}>
+                      {p.prezzoOld}
+                    </s>
+                  )}
+                </div>
+                <a href={buildAffiliateUrl(p.fonte, p.nome)} target="_blank" rel="noopener noreferrer"
+                  className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: '#E8A859' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
+                </a>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Disclaimer affiliazione */}
-      <p className="text-[10px] text-center pb-2" style={{ color: '#A7A8A8' }}>
-        Bertie può ricevere una commissione sugli acquisti effettuati tramite questi link.
-      </p>
+      {/* ── Disclaimer ── */}
+      <div className="mx-4 mb-4 mt-1 px-3 py-2.5 rounded-[12px]"
+        style={{ border: '1px dashed rgba(70,73,73,0.18)', backgroundColor: 'rgba(255,255,255,0.5)' }}>
+        <p style={{ fontSize: 9, color: '#6B6E6E', lineHeight: 1.4, fontFamily: 'monospace', letterSpacing: '0.02em' }}>
+          Bertie può ricevere una commissione sugli acquisti effettuati tramite questi link. Il prezzo per te non cambia.</p>
+      </div>
+
     </div>
   )
 }
 
 // ─── Layout principale ──────────────────────────────────────────────────────
-const TITLES = { vaccini: 'Salute', mappa: 'Mappa 📍', aivet: 'AI Veterinario', diario: 'Diario', accessori: 'Shop 🛍️', profilo: 'Profilo' }
+const TITLES = { vaccini: 'Salute', mappa: 'Mappa 📍', aivet: 'AI Veterinario', diario: 'Libretto', accessori: 'Shop 🛍️', profilo: 'Profilo' }
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -931,19 +1250,11 @@ export default function Dashboard() {
 
       {/* Top bar */}
       {tab === 'vaccini' ? (
-        /* Home tab — header minimale: solo safe-area + campanella */
-        <header className="flex items-center justify-end px-5 pt-12 pb-1 shrink-0"
-          style={{ backgroundColor: '#F6ECC8' }}>
-          <button className="relative w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: '#FFFFFF' }}>
-            <Bell size={18} style={{ color: '#2A2C2C' }} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-              style={{ backgroundColor: '#F0B97A' }} />
-          </button>
-        </header>
+        /* Home tab — solo safe-area, niente header visibile */
+        <div className="shrink-0 pt-12" style={{ backgroundColor: '#F6ECC8' }} />
       ) : (
-        /* Altre tab — header standard con titolo */
-        <header className="flex items-center justify-between px-5 pt-12 pb-3 shrink-0"
+        /* Altre tab — header con titolo, senza campanella */
+        <header className="flex items-center px-5 pt-12 pb-3 shrink-0"
           style={{ backgroundColor: '#F6ECC8' }}>
           <div>
             <p className="text-xs font-semibold" style={{ color: '#E8A859', letterSpacing: '0.04em' }}>🐾 Bertie</p>
@@ -951,12 +1262,6 @@ export default function Dashboard() {
               {TITLES[tab]}
             </h1>
           </div>
-          <button className="relative w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: '#FFFFFF' }}>
-            <Bell size={18} style={{ color: '#2A2C2C' }} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-              style={{ backgroundColor: '#F0B97A' }} />
-          </button>
         </header>
       )}
 
@@ -965,7 +1270,7 @@ export default function Dashboard() {
         {tab === 'vaccini'   && <SaluteView dogName={dogName} dogRazza={dogRazza} photoUrl={dogPhotoUrl} userName={userName} />}
         {tab === 'mappa'     && <MappaView />}
         {tab === 'aivet'     && <AIVetView isPremium={isPremium} />}
-        {tab === 'diario'    && <DiarioView />}
+        {tab === 'diario'    && <LibrettoView dogName={dogName} />}
         {tab === 'accessori' && <AccessoriView dogName={dogName} dogRazza={dogRazza} />}
         {tab === 'profilo'   && (
           <ProfiloView
@@ -983,6 +1288,7 @@ export default function Dashboard() {
         active={tab}
         onChange={(t) => { if (t === 'aivet' && !isPremium) return; setTab(t) }}
         isPremium={isPremium}
+        notifiche={vaccini.filter(v => v.scaduto || v.giorni <= 30).length}
       />
     </AppShell>
   )
