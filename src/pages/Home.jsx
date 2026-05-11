@@ -46,7 +46,7 @@ export default function Home() {
             marginBottom: 22,
           }}>
             <span style={{ width: 14, height: 1, backgroundColor: '#B77336', display: 'inline-block' }} />
-            L'app italiana per chi ha un cane
+            L'app per chi ha un cane
             <span style={{ width: 14, height: 1, backgroundColor: '#B77336', display: 'inline-block' }} />
           </div>
 
@@ -155,7 +155,7 @@ export default function Home() {
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex items-center justify-between px-6 py-5 shrink-0 mt-2"
+        <div className="flex items-center justify-between px-6 py-3 shrink-0 mt-1"
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
