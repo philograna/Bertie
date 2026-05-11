@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, ChevronRight, Send, Lock, Syringe, MapPin, BookOpen, Dog, Camera } from 'lucide-react'
+import { Plus, ChevronRight, Send, Lock, Syringe, MapPin, BookOpen, Dog, Camera, Bell, Shield, MessageCircle, LogOut } from 'lucide-react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -836,18 +836,39 @@ function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeE
       <div className="rounded-[18px] overflow-hidden"
         style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
         {[
-          { icon: '🔔', label: 'Notifiche',       sub: 'Vaccini, antiparassitari, appuntamenti' },
-          { icon: '🔒', label: 'Privacy e dati',  sub: 'I tuoi dati sono al sicuro' },
-          { icon: '💬', label: 'Feedback',         sub: 'Aiutaci a migliorare Bertie' },
-          { icon: '📤', label: 'Esci',             sub: null },
+          {
+            Icon: Bell, label: 'Notifiche', sub: 'Vaccini, antiparassitari, appuntamenti',
+            color: '#B77336', bg: '#FBF6E2',
+            action: () => Notification?.requestPermission?.(),
+          },
+          {
+            Icon: Shield, label: 'Privacy e dati', sub: 'I tuoi dati sono al sicuro',
+            color: '#3A6EA8', bg: '#EEF4FB',
+            action: () => window.open('https://bertie.app/privacy', '_blank'),
+          },
+          {
+            Icon: MessageCircle, label: 'Feedback', sub: 'Aiutaci a migliorare Bertie',
+            color: '#2E7D52', bg: '#F0FBF4',
+            action: () => window.open('mailto:feedback@bertie.app', '_blank'),
+          },
+          {
+            Icon: LogOut, label: 'Esci', sub: null,
+            color: '#B04040', bg: '#FBF0F0',
+            action: async () => { await supabase.auth.signOut(); navigate('/') },
+          },
         ].map((item, i, arr) => (
           <button key={item.label}
-            className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors"
+            onClick={item.action}
+            className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:opacity-70 transition-opacity"
             style={{ borderBottom: i < arr.length - 1 ? '1px solid #F6ECC8' : 'none' }}>
-            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 text-base"
-              style={{ backgroundColor: '#FBF6E2' }}>{item.icon}</div>
+            <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0"
+              style={{ backgroundColor: item.bg }}>
+              <item.Icon size={16} strokeWidth={1.8} style={{ color: item.color }} />
+            </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold" style={{ color: '#2A2C2C' }}>{item.label}</p>
+              <p className="text-sm font-semibold" style={{ color: item.label === 'Esci' ? '#B04040' : '#2A2C2C' }}>
+                {item.label}
+              </p>
               {item.sub && <p className="text-xs" style={{ color: '#6B6E6E' }}>{item.sub}</p>}
             </div>
             <ChevronRight size={14} style={{ color: '#A7A8A8' }} />
