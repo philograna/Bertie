@@ -83,7 +83,7 @@ export default function Home() {
             color: '#2A2C2C',
             margin: '0 0 14px',
           }}>
-            Un solo posto per tutta la vita del tuo <em style={{ fontStyle: 'italic', color: '#D28C45' }}>cane</em>.
+            Un solo posto per tutta<br />la vita del tuo <em style={{ fontStyle: 'italic', color: '#D28C45' }}>cane</em>.
           </h2>
 
           {/* Subtitle */}
