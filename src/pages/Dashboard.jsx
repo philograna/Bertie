@@ -7,6 +7,7 @@ import 'leaflet/dist/leaflet.css'
 import { supabase } from '../lib/supabase'
 import AppShell from '../components/AppShell'
 import BottomNav from '../components/BottomNav'
+import GoogleAd from '../components/GoogleAd'
 
 // Fix leaflet default icon paths broken by bundlers
 delete L.Icon.Default.prototype._getIconUrl
@@ -230,7 +231,8 @@ function SaluteView({ dogName, dogRazza, photoUrl, userName }) {
 
       </div>
 
-      <AdBanner />
+      {/* Google Display Ad — Home */}
+      <GoogleAd slot="1111111111" />
 
     </div>
   )
@@ -576,7 +578,8 @@ function AIVetView({ isPremium }) {
           Annulla in qualsiasi momento
         </p>
 
-        <AdBanner />
+        {/* Google Display Ad — AI Vet */}
+        <GoogleAd slot="2222222222" />
       </div>
     )
   }
@@ -733,70 +736,9 @@ function LibrettoView({ dogName }) {
         </div>
       )}
 
-      <AdBanner />
+      {/* Google Display Ad — Libretto */}
+      <GoogleAd slot="3333333333" />
 
-    </div>
-  )
-}
-
-// ─── Ad Banner ──────────────────────────────────────────────────────────────
-const ADS = [
-  {
-    brand:   'Monge',
-    emoji:   '🥩',
-    color:   '#FBF6E2',
-    accent:  '#B77336',
-    tagline: 'Cibo naturale per cani felici.',
-    cta:     'Scopri',
-    url:     'https://www.monge.it',
-  },
-  {
-    brand:   'Ferplast',
-    emoji:   '🛁',
-    color:   '#EEF4FB',
-    accent:  '#3A6EA8',
-    tagline: 'Accessori pensati per il tuo cane.',
-    cta:     'Vedi prodotti',
-    url:     'https://www.ferplast.com',
-  },
-  {
-    brand:   'MioDottore',
-    emoji:   '🩺',
-    color:   '#F0FBF4',
-    accent:  '#2E7D52',
-    tagline: 'Prenota il veterinario vicino a te.',
-    cta:     'Prenota ora',
-    url:     'https://www.miodottore.it',
-  },
-]
-
-function AdBanner() {
-  const ad = ADS[Math.floor(Date.now() / 60000) % ADS.length]
-  return (
-    <div className="rounded-[18px] overflow-hidden"
-      style={{ backgroundColor: ad.color, border: '1.5px solid rgba(0,0,0,0.06)' }}>
-      <div className="px-4 pt-3 pb-1 flex items-center justify-between">
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, textTransform: 'uppercase',
-          letterSpacing: '0.12em', color: '#A7A8A8' }}>
-          Sponsorizzato
-        </span>
-        <span style={{ fontSize: 9, color: '#A7A8A8' }}>✕</span>
-      </div>
-      <div className="px-4 pb-4 flex items-center gap-4">
-        <div className="w-14 h-14 rounded-[14px] flex items-center justify-center text-3xl shrink-0"
-          style={{ backgroundColor: 'rgba(0,0,0,0.05)' }}>
-          {ad.emoji}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm" style={{ color: '#2A2C2C' }}>{ad.brand}</p>
-          <p className="text-xs mt-0.5" style={{ color: '#6B6E6E', lineHeight: 1.35 }}>{ad.tagline}</p>
-        </div>
-        <a href={ad.url} target="_blank" rel="noopener noreferrer"
-          className="shrink-0 px-3.5 py-2 rounded-pill text-xs font-semibold"
-          style={{ backgroundColor: ad.accent, color: '#FFFFFF' }}>
-          {ad.cta}
-        </a>
-      </div>
     </div>
   )
 }
@@ -900,8 +842,8 @@ function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeE
         </button>
       </div>
 
-      {/* ── Ads ── */}
-      <AdBanner />
+      {/* Google Display Ad — Profilo */}
+      <GoogleAd slot="4444444444" />
 
       {/* ── Settings list ── */}
       <div className="rounded-[18px] overflow-hidden"
