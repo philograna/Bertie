@@ -723,7 +723,7 @@ function LibrettoView({ dogName, dogId }) {
             style={{
               borderRadius: 14,
               backgroundColor: sezione === t.id ? '#E8A859' : '#FFFFFF',
-              color: sezione === t.id ? '#FFFFFF' : '#A7A8A8',
+              color: sezione === t.id ? '#FFFFFF' : '#E8A859',
               boxShadow: sezione === t.id ? 'none' : 'var(--shadow-soft)',
             }}>
             {t.label}
