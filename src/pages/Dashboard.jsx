@@ -230,6 +230,8 @@ function SaluteView({ dogName, dogRazza, photoUrl, userName }) {
 
       </div>
 
+      <AdBanner />
+
     </div>
   )
 }
@@ -573,6 +575,8 @@ function AIVetView({ isPremium }) {
         <p className="text-center text-xs" style={{ color: '#A7A8A8', marginTop: -8 }}>
           Annulla in qualsiasi momento
         </p>
+
+        <AdBanner />
       </div>
     )
   }
@@ -728,6 +732,8 @@ function LibrettoView({ dogName }) {
           ))}
         </div>
       )}
+
+      <AdBanner />
 
     </div>
   )
