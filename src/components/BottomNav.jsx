@@ -9,8 +9,7 @@ function BertieLogoIcon({ size = 20, active }) {
       style={{
         width: size,
         height: size,
-        borderRadius: '50%',
-        objectFit: 'cover',
+        objectFit: 'contain',
         opacity: active ? 1 : 0.4,
         transition: 'opacity 0.15s',
       }}
@@ -53,7 +52,7 @@ export default function BottomNav({ active, onChange, isPremium, notifiche = 0 }
                 <BertieLogoIcon size={32} active={isActive} />
               ) : (
                 <Icon
-                  size={20}
+                  size={32}
                   strokeWidth={isActive ? 2.5 : 1.8}
                   style={{ color: isActive ? '#E8A859' : '#A7A8A8' }}
                 />
