@@ -23,8 +23,10 @@ export default function Home() {
         }}
       >
 
-        {/* ── Wordmark centrato ── */}
-        <div className="flex items-center justify-center pt-10 pb-0 shrink-0">
+        {/* ── Wordmark + hero come blocco unico ── */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center px-6 pt-8 pb-4">
+
+          {/* Wordmark */}
           <span style={{
             fontFamily: 'var(--font-display)',
             fontSize: 72,
@@ -32,13 +34,10 @@ export default function Home() {
             letterSpacing: '-0.03em',
             color: '#2A2C2C',
             lineHeight: 1,
+            marginBottom: 28,
           }}>
             Ber<em style={{ fontStyle: 'italic', color: '#D28C45' }}>tie</em>
           </span>
-        </div>
-
-        {/* ── Center hero ── */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center px-6 py-4">
 
           {/* Eyebrow line */}
           <div style={{
