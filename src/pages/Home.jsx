@@ -24,7 +24,7 @@ export default function Home() {
       >
 
         {/* ── Wordmark + hero come blocco unico ── */}
-        <div className="flex-1 flex flex-col items-center justify-center text-center px-6 pt-8 pb-4">
+        <div className="flex-1 flex flex-col items-center justify-end text-center px-6 pt-8 pb-6">
 
           {/* Wordmark */}
           <span style={{
@@ -94,7 +94,7 @@ export default function Home() {
 
           {/* Subtitle */}
           <p style={{
-            margin: 0,
+            margin: '0 0 28px',
             fontSize: 13.5,
             lineHeight: 1.5,
             color: '#464949',
@@ -102,63 +102,62 @@ export default function Home() {
           }}>
             Vaccini, salute, mappa dog-friendly.
           </p>
-        </div>
 
-        {/* ── CTAs ── */}
-        <div className="px-6 flex flex-col gap-2.5 shrink-0">
-          {/* Primary: dark ink with gold arrow */}
-          <button
-            onClick={() => navigate('/registrati')}
-            style={{
-              width: '100%',
-              padding: '15px 18px',
-              borderRadius: 999,
-              border: 0,
-              fontFamily: 'var(--font-sans)',
-              fontSize: 15,
-              fontWeight: 500,
-              backgroundColor: '#2A2C2C',
-              color: '#F6ECC8',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              cursor: 'pointer',
-            }}
-          >
-            Aggiungi il tuo cane
-            {/* Gold circle arrow */}
-            <span style={{
-              width: 22, height: 22, borderRadius: '50%',
-              backgroundColor: '#E8A859',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2A2C2C" strokeWidth="3">
-                <path d="M5 12h14M13 6l6 6-6 6"/>
-              </svg>
-            </span>
-          </button>
+          {/* ── CTAs ── */}
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* Primary: dark ink with gold arrow */}
+            <button
+              onClick={() => navigate('/registrati')}
+              style={{
+                width: '100%',
+                padding: '15px 18px',
+                borderRadius: 999,
+                border: 0,
+                fontFamily: 'var(--font-sans)',
+                fontSize: 15,
+                fontWeight: 500,
+                backgroundColor: '#2A2C2C',
+                color: '#F6ECC8',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                cursor: 'pointer',
+              }}
+            >
+              Aggiungi il tuo cane
+              <span style={{
+                width: 22, height: 22, borderRadius: '50%',
+                backgroundColor: '#E8A859',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2A2C2C" strokeWidth="3">
+                  <path d="M5 12h14M13 6l6 6-6 6"/>
+                </svg>
+              </span>
+            </button>
 
-          {/* Ghost: login */}
-          <button
-            onClick={() => navigate('/login')}
-            style={{
-              width: '100%',
-              padding: '15px 18px',
-              borderRadius: 999,
-              border: 0,
-              fontFamily: 'var(--font-sans)',
-              fontSize: 15,
-              fontWeight: 500,
-              backgroundColor: 'transparent',
-              color: '#2A2C2C',
-              boxShadow: 'inset 0 0 0 1.5px #2A2C2C',
-              cursor: 'pointer',
-            }}
-          >
-            Ho già un account · Accedi
-          </button>
+            {/* Ghost: login */}
+            <button
+              onClick={() => navigate('/login')}
+              style={{
+                width: '100%',
+                padding: '15px 18px',
+                borderRadius: 999,
+                border: 0,
+                fontFamily: 'var(--font-sans)',
+                fontSize: 15,
+                fontWeight: 500,
+                backgroundColor: 'transparent',
+                color: '#2A2C2C',
+                boxShadow: 'inset 0 0 0 1.5px #2A2C2C',
+                cursor: 'pointer',
+              }}
+            >
+              Ho già un account · Accedi
+            </button>
+          </div>
         </div>
 
         {/* ── Footer ── */}
