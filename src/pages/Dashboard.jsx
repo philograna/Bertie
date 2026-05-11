@@ -231,8 +231,6 @@ function SaluteView({ dogName, dogRazza, photoUrl, userName }) {
 
       </div>
 
-      {/* Google Display Ad — Home */}
-      <GoogleAd slot="1111111111" />
 
     </div>
   )
@@ -578,8 +576,6 @@ function AIVetView({ isPremium }) {
           Annulla in qualsiasi momento
         </p>
 
-        {/* Google Display Ad — AI Vet */}
-        <GoogleAd slot="2222222222" />
       </div>
     )
   }
@@ -736,8 +732,6 @@ function LibrettoView({ dogName }) {
         </div>
       )}
 
-      {/* Google Display Ad — Libretto */}
-      <GoogleAd slot="3333333333" />
 
     </div>
   )
@@ -842,8 +836,6 @@ function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeE
         </button>
       </div>
 
-      {/* Google Display Ad — Profilo */}
-      <GoogleAd slot="4444444444" />
 
       {/* ── Settings list ── */}
       <div className="rounded-[18px] overflow-hidden"
@@ -1246,6 +1238,11 @@ export default function Dashboard() {
           />
         )}
       </div>
+
+      {/* Google Display Ad — overlay sopra la nav, esclusi Shop e Mappa */}
+      {tab !== 'accessori' && tab !== 'mappa' && (
+        <GoogleAd slot="1111111111" />
+      )}
 
       <BottomNav
         active={tab}
