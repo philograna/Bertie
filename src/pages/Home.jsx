@@ -30,7 +30,7 @@ export default function Home() {
           <img
             src="/bertie-wordmark.svg"
             alt="Bertie"
-            style={{ width: 320, marginBottom: 8 }}
+            style={{ width: 280, marginBottom: 8 }}
           />
 
           {/* Eyebrow line */}
@@ -51,7 +51,7 @@ export default function Home() {
           </div>
 
           {/* Big logo with gold halo */}
-          <div style={{ position: 'relative', width: 180, height: 180, display: 'grid', placeItems: 'center', marginBottom: 26 }}>
+          <div style={{ position: 'relative', width: 210, height: 210, display: 'grid', placeItems: 'center', marginBottom: 26 }}>
             {/* Halo */}
             <div style={{
               position: 'absolute',
