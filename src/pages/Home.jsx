@@ -24,7 +24,7 @@ export default function Home() {
       >
 
         {/* ── Wordmark + hero come blocco unico ── */}
-        <div className="flex-1 flex flex-col items-center justify-end text-center px-6 pt-8 pb-6">
+        <div className="flex-1 flex flex-col items-center justify-start text-center px-6 pt-10 pb-4">
 
           {/* Wordmark */}
           <span style={{
