@@ -26,18 +26,12 @@ export default function Home() {
         {/* ── Wordmark + hero come blocco unico ── */}
         <div className="flex-1 flex flex-col items-center justify-start text-center px-6 pt-20 pb-4">
 
-          {/* Wordmark */}
-          <span style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 72,
-            fontWeight: 400,
-            letterSpacing: '-0.03em',
-            color: '#2A2C2C',
-            lineHeight: 1,
-            marginBottom: 28,
-          }}>
-            Ber<em style={{ fontStyle: 'italic', color: '#D28C45' }}>tie</em>
-          </span>
+          {/* Wordmark SVG */}
+          <img
+            src="/bertie-wordmark.svg"
+            alt="Bertie"
+            style={{ width: 220, marginBottom: 28 }}
+          />
 
           {/* Eyebrow line */}
           <div style={{
