@@ -24,12 +24,12 @@ export default function Home() {
       >
 
         {/* ── Wordmark centrato ── */}
-        <div className="flex items-center justify-center pt-14 pb-2 shrink-0">
+        <div className="flex items-center justify-center pt-10 pb-0 shrink-0">
           <span style={{
             fontFamily: 'var(--font-display)',
-            fontSize: 44,
+            fontSize: 72,
             fontWeight: 400,
-            letterSpacing: '-0.025em',
+            letterSpacing: '-0.03em',
             color: '#2A2C2C',
             lineHeight: 1,
           }}>
