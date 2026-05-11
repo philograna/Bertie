@@ -3,6 +3,7 @@ import Home from './pages/Home'
 import Auth from './pages/Auth'
 import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
+import Notifiche from './pages/Notifiche'
 import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
@@ -17,6 +18,9 @@ export default function App() {
         } />
         <Route path="/dashboard" element={
           <ProtectedRoute><Dashboard /></ProtectedRoute>
+        } />
+        <Route path="/notifiche" element={
+          <ProtectedRoute><Notifiche /></ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

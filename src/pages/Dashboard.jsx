@@ -839,7 +839,7 @@ function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeE
           {
             Icon: Bell, label: 'Notifiche', sub: 'Vaccini, antiparassitari, appuntamenti',
             color: '#B77336', bg: '#FBF6E2',
-            action: () => Notification?.requestPermission?.(),
+            action: () => navigate('/notifiche'),
           },
           {
             Icon: Shield, label: 'Privacy e dati', sub: 'I tuoi dati sono al sicuro',
