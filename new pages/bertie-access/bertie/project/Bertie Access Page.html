@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bertie · Pagina di accesso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --cream-50:    #FBF6E2;
+    --cream-100:   #F6ECC8;
+    --cream-200:   #EFE0A8;
+    --gold-300:    #F0B97A;
+    --gold-500:    #E8A859;
+    --gold-600:    #D28C45;
+    --caramel-700: #B77336;
+    --caramel-800: #8C5524;
+    --ink-900:     #2A2C2C;
+    --ink-700:     #464949;
+    --ink-500:     #6B6E6E;
+    --ink-300:     #A7A8A8;
+    --serif: "Instrument Serif", Georgia, serif;
+    --sans:  "Geist", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono:  "Geist Mono", ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--cream-50); font-family: var(--sans); color: var(--ink-900); -webkit-font-smoothing: antialiased; }
+
+  .stage {
+    min-height: 100vh; padding: 56px 48px;
+    display: grid; grid-template-columns: 1fr 380px 1fr; gap: 56px; align-items: start;
+    background:
+      radial-gradient(1200px 600px at 10% 0%, color-mix(in oklab, var(--gold-500) 14%, transparent), transparent 60%),
+      radial-gradient(900px 500px at 100% 100%, color-mix(in oklab, var(--caramel-700) 10%, transparent), transparent 60%),
+      var(--cream-50);
+  }
+
+  /* —————— Left column —————— */
+  .meta-l { padding-top: 32px; text-align: right; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; color: var(--caramel-700);
+    text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 18px;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::after { content: ""; width: 18px; height: 1px; background: var(--caramel-700); }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: 80px; line-height: 0.95; letter-spacing: -0.025em; margin: 0 0 16px; }
+  h1 i { color: var(--gold-600); }
+  .lede { font-family: var(--serif); font-style: italic; font-size: 21px; line-height: 1.4; color: var(--ink-700); max-width: 36ch; margin: 0 0 24px; margin-left: auto; }
+  .meta-l .specs {
+    display: inline-grid; grid-template-columns: max-content max-content; gap: 6px 18px;
+    font-family: var(--mono); font-size: 11px; color: var(--ink-500);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    text-align: left; margin-top: 8px;
+  }
+  .meta-l .specs b { color: var(--ink-900); font-weight: 500; }
+  .diff {
+    margin-top: 28px; padding: 16px 18px; border-radius: 14px;
+    background: rgba(255,255,255,0.55);
+    border: 1px dashed color-mix(in oklab, var(--caramel-700) 35%, transparent);
+    text-align: left; max-width: 320px; margin-left: auto;
+  }
+  .diff .lbl { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--caramel-700); margin-bottom: 8px; }
+  .diff ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .diff li { font-size: 12.5px; color: var(--ink-700); display: flex; gap: 8px; align-items: baseline; }
+  .diff li::before { content: "−"; color: var(--caramel-700); font-family: var(--mono); }
+
+  /* —————— Phone —————— */
+  .phone {
+    width: 380px; background: var(--ink-900); border-radius: 56px; padding: 14px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.04) inset,
+      0 40px 100px -50px rgba(140, 85, 36, 0.45),
+      0 0 0 1px rgba(0,0,0,0.08);
+    position: relative;
+  }
+  .phone::before {
+    content: ""; position: absolute; top: 26px; left: 50%; transform: translateX(-50%);
+    width: 100px; height: 28px; border-radius: 16px; background: var(--ink-900); z-index: 5;
+  }
+  .screen {
+    background: var(--cream-100); border-radius: 44px; overflow: hidden;
+    min-height: 800px; display: flex; flex-direction: column;
+    position: relative;
+  }
+
+  /* Decorative cream wash + soft gold halo behind hero */
+  .screen::before {
+    content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(420px 280px at 75% 18%, color-mix(in oklab, var(--gold-500) 22%, transparent), transparent 70%),
+      radial-gradient(360px 240px at 15% 78%, color-mix(in oklab, var(--caramel-700) 10%, transparent), transparent 65%);
+    pointer-events: none;
+  }
+
+  /* Status bar */
+  .statusbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 28px 4px; font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--ink-900); position: relative; z-index: 6;
+  }
+  .statusbar .right { display: flex; gap: 6px; align-items: center; }
+  .statusbar svg { width: 16px; height: 12px; }
+
+  /* Top mini bar — language only */
+  .topmini {
+    padding: 14px 24px 0; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 2;
+  }
+  .topmini .brand {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--serif); font-size: 20px; letter-spacing: -0.02em; color: var(--ink-900);
+  }
+  .topmini .brand i { color: var(--gold-600); font-style: italic; }
+  .topmini .brand .logoholder {
+    width: 26px; height: 26px; border-radius: 8px; background: var(--cream-50);
+    display: grid; place-items: center; overflow: hidden;
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--ink-700) 8%, transparent);
+  }
+  .topmini .brand .logoholder img { width: 92%; height: 92%; object-fit: contain; }
+  .topmini .lang {
+    font-family: var(--mono); font-size: 10px; color: var(--ink-700); text-transform: uppercase; letter-spacing: 0.1em;
+    padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.5);
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .topmini .lang::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--gold-500); }
+
+  /* Price strip — single line */
+  .pricestrip {
+    margin: 22px 26px 0; padding: 10px 14px; border-radius: 999px;
+    background: #fff; display: flex; align-items: center; gap: 10px;
+    font-size: 12px; color: var(--ink-700); position: relative; z-index: 2;
+    border: 1px solid color-mix(in oklab, var(--ink-700) 8%, transparent);
+  }
+  .pricestrip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold-500); flex: none; }
+  .pricestrip b { color: var(--ink-900); font-weight: 600; }
+  .pricestrip .sep { color: var(--ink-300); margin: 0 2px; }
+
+  /* Bertie portrait card */
+  .portrait {
+    margin: 24px 26px 0; border-radius: 22px; overflow: hidden; position: relative; z-index: 2;
+    background: var(--gold-500);
+    padding: 18px 18px 18px;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 14px 30px -22px rgba(140,85,36,0.55);
+  }
+  .portrait::after {
+    content: ""; position: absolute; inset: 0;
+    background:
+      radial-gradient(220px 120px at 110% -20%, color-mix(in oklab, #fff 22%, transparent), transparent 70%),
+      radial-gradient(180px 120px at -10% 120%, color-mix(in oklab, var(--caramel-800) 30%, transparent), transparent 70%);
+    pointer-events: none;
+  }
+  .portrait .avatar {
+    width: 72px; height: 72px; border-radius: 22px; background: var(--cream-50);
+    display: grid; place-items: center; flex: none; position: relative; z-index: 2;
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--cream-100) 35%, transparent);
+  }
+  .portrait .avatar img { width: 88%; height: 88%; object-fit: contain; }
+  .portrait .who { position: relative; z-index: 2; color: var(--cream-100); }
+  .portrait .who .role {
+    font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: color-mix(in oklab, var(--cream-100) 80%, transparent); margin-bottom: 4px;
+  }
+  .portrait .who .name {
+    font-family: var(--serif); font-size: 24px; line-height: 1.05; color: #fff;
+  }
+  .portrait .who .name i { font-style: italic; }
+  .portrait .who .say {
+    margin-top: 6px; font-family: var(--serif); font-style: italic; font-size: 14px; line-height: 1.3;
+    color: color-mix(in oklab, #fff 92%, transparent); max-width: 22ch;
+  }
+
+  /* Centered hero */
+  .centerhero {
+    flex: 1; min-height: 0;
+    padding: 18px 26px 8px; position: relative; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .centerhero .pawline {
+    font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--caramel-700);
+    display: inline-flex; align-items: center; gap: 8px; margin-bottom: 22px;
+  }
+  .centerhero .pawline::before, .centerhero .pawline::after {
+    content: ""; width: 14px; height: 1px; background: var(--caramel-700);
+  }
+  .centerhero .biglogo {
+    position: relative; width: 200px; height: 200px;
+    display: grid; place-items: center; margin-bottom: 26px;
+  }
+  .centerhero .biglogo .halo {
+    position: absolute; inset: 0; border-radius: 50%;
+    background:
+      radial-gradient(closest-side, color-mix(in oklab, var(--gold-500) 38%, transparent), transparent 72%);
+    filter: blur(2px);
+  }
+  .centerhero .biglogo img {
+    position: relative; width: 100%; height: 100%; object-fit: contain;
+    filter: drop-shadow(0 18px 30px rgba(140,85,36,0.28));
+  }
+  .centerhero h2 {
+    font-family: var(--serif); font-weight: 400; font-size: 36px; line-height: 1.0;
+    letter-spacing: -0.02em; margin: 0; color: var(--ink-900); text-wrap: pretty;
+  }
+  .centerhero h2 i { color: var(--gold-600); font-style: italic; }
+  .centerhero p {
+    margin: 14px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-700); max-width: 28ch;
+  }
+
+  /* CTAs */
+  .ctas {
+    margin: 8px 26px 0; display: flex; flex-direction: column; gap: 10px; position: relative; z-index: 2;
+  }
+  .btn {
+    width: 100%; padding: 16px 18px; border-radius: 999px; border: 0;
+    font-family: var(--sans); font-size: 15px; font-weight: 500;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer;
+  }
+  .btn.primary { background: var(--ink-900); color: var(--cream-100); }
+  .btn.primary .arr { display: inline-flex; width: 22px; height: 22px; border-radius: 50%; background: var(--gold-500); color: var(--ink-900); align-items: center; justify-content: center; }
+  .btn.primary .arr svg { width: 12px; height: 12px; }
+  .btn.ghost {
+    background: transparent; color: var(--ink-900);
+    box-shadow: inset 0 0 0 1.5px var(--ink-900);
+  }
+
+  /* Footer mini */
+  .footmini {
+    margin: auto 26px 26px; padding-top: 22px; position: relative; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--mono); font-size: 10px; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .footmini .proof { display: inline-flex; align-items: center; gap: 8px; }
+  .footmini .proof .num { color: var(--ink-900); font-weight: 500; }
+  .footmini a { color: var(--ink-700); text-decoration: none; border-bottom: 1px dotted var(--ink-300); padding-bottom: 1px; }
+
+  /* —————— Right annotations —————— */
+  .annots { padding-top: 32px; display: flex; flex-direction: column; gap: 18px; }
+  .annot {
+    padding: 18px 20px; background: #fff; border-radius: 16px;
+    border: 1px solid color-mix(in oklab, var(--ink-700) 10%, transparent);
+  }
+  .annot .num {
+    font-family: var(--mono); font-size: 10px; color: var(--caramel-700); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .annot .num span {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--gold-500); color: #fff;
+    display: grid; place-items: center; font-size: 11px; font-weight: 600;
+  }
+  .annot h4 { font-family: var(--serif); font-size: 22px; font-weight: 400; line-height: 1.1; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .annot p { margin: 0; font-size: 13px; color: var(--ink-500); line-height: 1.5; }
+  .annot.dark { background: var(--ink-900); color: var(--cream-100); border-color: var(--ink-900); }
+  .annot.dark .num { color: var(--gold-500); }
+  .annot.dark .num span { background: var(--gold-500); color: var(--ink-900); }
+  .annot.dark p { color: color-mix(in oklab, var(--cream-100) 75%, transparent); }
+
+  @media (max-width: 1100px) {
+    .stage { grid-template-columns: 1fr; gap: 32px; padding: 32px 24px; }
+    .meta-l { text-align: left; }
+    .meta-l .lede, .diff { margin-left: 0; }
+    .phone { margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- LEFT -->
+  <div class="meta-l">
+    <div class="eyebrow">Pagina di accesso · v0.2</div>
+    <h1>L'<i>ingresso</i><br />di Bertie.</h1>
+    <p class="lede">Una schermata sola, due decisioni: aggiungi il tuo cane, oppure rientra. Il resto si racconta dentro l'app.</p>
+
+    <div class="specs">
+      <span>Schermo</span><span><b>390 × 844 (iPhone)</b></span>
+      <span>Sezione</span><span><b>Onboarding · prima apertura</b></span>
+      <span>Tipografia</span><span><b>Instrument Serif · Geist</b></span>
+      <span>Palette</span><span><b>Biscuit · Gold · Bowtie</b></span>
+    </div>
+
+    <div class="diff">
+      <div class="lbl">Cosa è uscito</div>
+      <ul>
+        <li>Lista feature (Tracker / Mappa / AI / Community)</li>
+        <li>Sezione "Chi usa Kompet" con testimonianze</li>
+        <li>Blocco finale "Pronto a iniziare?" duplicato</li>
+        <li>Doppio CTA in alto (Aggiungi + Accedi su due righe)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CENTER · Phone -->
+  <div class="phone">
+    <div class="screen">
+
+      <div class="statusbar">
+        <span>9:41</span>
+        <div class="right">
+          <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="3" width="3" height="6" rx="0.6"/><rect x="5" y="1.5" width="3" height="9" rx="0.6"/><rect x="10" y="0" width="3" height="12" rx="0.6"/></svg>
+          <svg viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="0.75" y="0.75" width="20" height="10.5" rx="2.5"/><rect x="2.5" y="2.5" width="13" height="7" rx="1" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx="0.5" fill="currentColor"/></svg>
+        </div>
+      </div>
+
+      <!-- Brand + language -->
+      <div class="topmini">
+        <div class="brand">
+          <div class="logoholder"><img src="assets/bertie-logo.png" alt="" /></div>
+          <span>Ber<i>tie</i></span>
+        </div>
+        <span class="lang">IT</span>
+      </div>
+
+      <!-- Centered hero: big logo + title -->
+      <div class="centerhero">
+        <div class="pawline">L'app italiana per chi ha un cane</div>
+        <div class="biglogo">
+          <div class="halo"></div>
+          <img src="assets/bertie-logo.png" alt="Bertie" />
+        </div>
+        <h2>Un solo posto<br />per tutta la vita<br />del tuo <i>cane</i>.</h2>
+        <p>Vaccini, salute, mappa dog-friendly — in italiano.</p>
+      </div>
+
+      <!-- CTAs -->
+      <div class="ctas">
+        <button class="btn primary">
+          Aggiungi il tuo cane
+          <span class="arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </button>
+        <button class="btn ghost">Ho già un account · Accedi</button>
+      </div>
+
+      <!-- Footer -->
+      <div class="footmini">
+        <span class="proof"><span class="num">7M+</span> cani in Italia</span>
+        <a href="#">Privacy</a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT annotations -->
+  <div class="annots">
+    <div class="annot">
+      <div class="num"><span>1</span>Una decisione, non quattro</div>
+      <h4>Aggiungi il tuo cane — punto.</h4>
+      <p>CTA primaria in bowtie con freccia oro: massimo contrasto sul cream. La login passa in ghost: serve solo a chi ritorna.</p>
+    </div>
+    <div class="annot dark">
+      <div class="num"><span>2</span>Niente prezzo all'ingresso</div>
+      <h4>Premium si racconta dopo.</h4>
+      <p>La pillola Gratis · €0,99 è uscita: alla prima apertura non si decide il piano. Il prezzo emerge dentro l'app, dove c'è già contesto su cosa sblocca.</p>
+    </div>
+    <div class="annot">
+      <div class="num"><span>3</span>Logo al centro</div>
+      <h4>Bertie, in grande.</h4>
+      <p>Il marchio occupa il centro della schermata su un alone gold morbido. Il titolo respira sotto, distribuito su tre righe corte: l'occhio cade prima sul logo, poi sul claim.</p>
+    </div>
+    <div class="annot">
+      <div class="num"><span>4</span>Una sola pagina</div>
+      <h4>Sotto la piega non serve niente.</h4>
+      <p>Tagliate le testimonianze e il doppio CTA finale. La social proof resta come riga discreta nel footer: 7M+ cani in Italia.</p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

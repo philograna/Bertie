@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bertie · Pagina Accessori</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --cream-50:    #FBF6E2;
+    --cream-100:   #F6ECC8;
+    --cream-200:   #EFE0A8;
+    --gold-300:    #F0B97A;
+    --gold-500:    #E8A859;
+    --gold-600:    #D28C45;
+    --caramel-700: #B77336;
+    --caramel-800: #8C5524;
+    --ink-900:     #2A2C2C;
+    --ink-700:     #464949;
+    --ink-500:     #6B6E6E;
+    --ink-300:     #A7A8A8;
+    --serif: "Instrument Serif", Georgia, serif;
+    --sans:  "Geist", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono:  "Geist Mono", ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--cream-50); font-family: var(--sans); color: var(--ink-900); -webkit-font-smoothing: antialiased; }
+
+  .stage {
+    min-height: 100vh; padding: 56px 48px;
+    display: grid; grid-template-columns: 1fr 380px 1fr; gap: 56px; align-items: start;
+    background:
+      radial-gradient(1200px 600px at 10% 0%, color-mix(in oklab, var(--gold-500) 14%, transparent), transparent 60%),
+      radial-gradient(900px 500px at 100% 100%, color-mix(in oklab, var(--caramel-700) 10%, transparent), transparent 60%),
+      var(--cream-50);
+  }
+
+  /* —————— Left column: title + intro —————— */
+  .meta-l { padding-top: 32px; text-align: right; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; color: var(--caramel-700);
+    text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 18px;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::after { content: ""; width: 18px; height: 1px; background: var(--caramel-700); }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: 88px; line-height: 0.95; letter-spacing: -0.025em; margin: 0 0 16px; }
+  h1 i { color: var(--gold-600); }
+  .lede { font-family: var(--serif); font-style: italic; font-size: 22px; line-height: 1.4; color: var(--ink-700); max-width: 38ch; margin: 0 0 24px; margin-left: auto; }
+  .meta-l .specs {
+    display: inline-grid; grid-template-columns: max-content max-content; gap: 6px 18px;
+    font-family: var(--mono); font-size: 11px; color: var(--ink-500);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    text-align: left; margin-top: 16px;
+  }
+  .meta-l .specs b { color: var(--ink-900); font-weight: 500; }
+
+  /* —————— Phone —————— */
+  .phone {
+    width: 380px; background: var(--ink-900); border-radius: 56px; padding: 14px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.04) inset,
+      0 40px 100px -50px rgba(140, 85, 36, 0.45),
+      0 0 0 1px rgba(0,0,0,0.08);
+    position: relative;
+  }
+  .phone::before {
+    content: ""; position: absolute; top: 26px; left: 50%; transform: translateX(-50%);
+    width: 100px; height: 28px; border-radius: 16px; background: var(--ink-900); z-index: 5;
+  }
+  .screen {
+    background: var(--cream-100); border-radius: 44px; overflow: hidden;
+    min-height: 800px; display: flex; flex-direction: column;
+    position: relative;
+  }
+
+  /* Status bar */
+  .statusbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 28px 4px; font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--ink-900); position: relative; z-index: 6;
+  }
+  .statusbar .right { display: flex; gap: 6px; align-items: center; }
+  .statusbar svg { width: 16px; height: 12px; }
+
+  /* Top bar */
+  .top {
+    padding: 18px 22px 8px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .top .back {
+    width: 36px; height: 36px; border-radius: 12px; background: #fff;
+    display: grid; place-items: center; color: var(--ink-900);
+  }
+  .top .back svg { width: 16px; height: 16px; }
+  .top .title { font-family: var(--serif); font-size: 26px; letter-spacing: -0.02em; }
+  .top .title i { color: var(--gold-600); }
+  .top .cart {
+    width: 36px; height: 36px; border-radius: 12px; background: var(--ink-900); color: var(--cream-100);
+    display: grid; place-items: center; position: relative;
+  }
+  .top .cart svg { width: 16px; height: 16px; }
+  .top .cart .badge {
+    position: absolute; top: -4px; right: -4px;
+    background: var(--gold-500); color: #fff; font-size: 10px; font-weight: 600;
+    width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center;
+    border: 2px solid var(--cream-100);
+  }
+
+  /* Personalization card */
+  .pers {
+    margin: 8px 18px 14px; padding: 12px 14px; border-radius: 16px;
+    background: #fff; display: flex; align-items: center; gap: 12px;
+  }
+  .pers .avatar {
+    width: 38px; height: 38px; border-radius: 50%; background: var(--cream-100); flex: none;
+    display: grid; place-items: center; overflow: hidden;
+  }
+  .pers .avatar img { width: 92%; height: 92%; object-fit: contain; }
+  .pers .info { flex: 1; min-width: 0; }
+  .pers .info .k { font-family: var(--mono); font-size: 9px; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.08em; }
+  .pers .info .v { font-size: 13px; font-weight: 500; line-height: 1.2; }
+  .pers .info .v span { color: var(--ink-500); font-weight: 400; }
+  .pers .change {
+    font-family: var(--mono); font-size: 10px; color: var(--caramel-700); text-transform: uppercase; letter-spacing: 0.08em;
+  }
+
+  /* Search */
+  .search {
+    margin: 0 18px 12px; padding: 11px 14px; border-radius: 14px;
+    background: rgba(255,255,255,0.5); display: flex; gap: 10px; align-items: center;
+    border: 1px solid color-mix(in oklab, var(--ink-700) 8%, transparent);
+  }
+  .search svg { width: 14px; height: 14px; color: var(--ink-500); flex: none; }
+  .search input {
+    border: 0; outline: 0; background: transparent; flex: 1; font-family: var(--sans); font-size: 13px; color: var(--ink-900);
+  }
+  .search input::placeholder { color: var(--ink-500); }
+
+  /* Filter chips */
+  .chips {
+    display: flex; gap: 7px; padding: 4px 18px 14px; overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none; font-family: var(--sans); font-size: 12px; font-weight: 500;
+    padding: 7px 12px; border-radius: 999px; background: rgba(255,255,255,0.6); color: var(--ink-700);
+    white-space: nowrap; border: 1px solid color-mix(in oklab, var(--ink-700) 8%, transparent);
+  }
+  .chip.active { background: var(--ink-900); color: var(--cream-100); border-color: var(--ink-900); }
+
+  /* Hero/featured */
+  .featured {
+    margin: 0 18px 16px; padding: 18px 18px 16px; border-radius: 20px;
+    background: var(--gold-500); color: var(--cream-100);
+    display: flex; gap: 14px; align-items: center; position: relative; overflow: hidden;
+  }
+  .featured::after {
+    content: ""; position: absolute; right: -30px; top: -30px; width: 140px; height: 140px;
+    background: color-mix(in oklab, #fff 14%, transparent); border-radius: 50%;
+  }
+  .featured .copy { flex: 1; position: relative; z-index: 2; }
+  .featured .tag {
+    font-family: var(--mono); font-size: 9px; color: var(--cream-100); text-transform: uppercase; letter-spacing: 0.1em;
+    background: color-mix(in oklab, var(--ink-900) 50%, transparent); padding: 3px 7px; border-radius: 999px;
+    display: inline-block; margin-bottom: 8px;
+  }
+  .featured h3 { font-family: var(--serif); font-weight: 400; font-size: 22px; line-height: 1.05; margin: 0 0 4px; color: #fff; }
+  .featured h3 i { font-style: italic; }
+  .featured p { margin: 0 0 10px; font-size: 12px; opacity: 0.92; max-width: 22ch; }
+  .featured .cta {
+    font-family: var(--sans); font-size: 11px; font-weight: 600; color: var(--gold-600); background: #fff;
+    padding: 7px 12px; border-radius: 999px; display: inline-flex; gap: 5px; align-items: center;
+  }
+  .featured .pill {
+    width: 86px; height: 86px; flex: none; position: relative; z-index: 2;
+    background: var(--cream-100);
+    background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--caramel-700) 18%, transparent) 0 6px, transparent 6px 14px);
+    border-radius: 18px;
+    display: grid; place-items: center;
+    font-family: var(--mono); font-size: 9px; color: var(--caramel-800); text-transform: uppercase; letter-spacing: 0.08em;
+  }
+
+  /* Section header */
+  .section-h {
+    padding: 4px 22px 10px; display: flex; align-items: baseline; justify-content: space-between;
+  }
+  .section-h .ttl { font-family: var(--serif); font-size: 20px; letter-spacing: -0.015em; }
+  .section-h .ttl i { color: var(--gold-600); }
+  .section-h .more { font-family: var(--mono); font-size: 9px; color: var(--caramel-700); text-transform: uppercase; letter-spacing: 0.1em; }
+
+  /* Product grid */
+  .prods {
+    padding: 0 18px 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .prod {
+    background: #fff; border-radius: 16px; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .prod .img {
+    aspect-ratio: 1/1; position: relative; background: var(--cream-100);
+    background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--caramel-700) 14%, transparent) 0 6px, transparent 6px 14px);
+    display: grid; place-items: center;
+  }
+  .prod .img .ph { font-family: var(--mono); font-size: 9px; color: var(--caramel-800); text-transform: uppercase; letter-spacing: 0.08em; background: var(--cream-100); padding: 4px 8px; border-radius: 6px; }
+  .prod .img .src {
+    position: absolute; top: 8px; left: 8px; font-family: var(--mono); font-size: 8px;
+    padding: 4px 7px; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+  }
+  .prod .img .src.amazon { background: var(--ink-900); color: var(--gold-500); }
+  .prod .img .src.arca   { background: var(--gold-500); color: var(--ink-900); }
+  .prod .img .like {
+    position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(255,255,255,0.9); display: grid; place-items: center; color: var(--ink-700);
+  }
+  .prod .img .like svg { width: 13px; height: 13px; }
+  .prod .img .badge-deal {
+    position: absolute; bottom: 8px; left: 8px; font-family: var(--mono); font-size: 9px;
+    padding: 3px 7px; border-radius: 6px; background: var(--ink-900); color: var(--cream-100); font-weight: 600;
+  }
+  .prod .body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .prod .cat { font-family: var(--mono); font-size: 9px; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.08em; }
+  .prod .ttl { font-family: var(--serif); font-size: 16px; line-height: 1.15; letter-spacing: -0.005em; }
+  .prod .why { font-size: 11px; color: var(--ink-500); margin-top: 2px; line-height: 1.35; }
+  .prod .foot { margin-top: auto; padding-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .prod .price { font-family: var(--serif); font-size: 16px; color: var(--ink-900); display: flex; gap: 5px; align-items: baseline; }
+  .prod .price s { font-family: var(--sans); font-size: 10px; color: var(--ink-300); }
+  .prod .add {
+    width: 28px; height: 28px; border-radius: 999px; background: var(--gold-500); color: #fff;
+    display: grid; place-items: center; flex: none;
+  }
+  .prod .add svg { width: 14px; height: 14px; }
+
+  /* Disclaimer */
+  .disclaim {
+    margin: 0 18px 14px; padding: 10px 14px; border-radius: 12px;
+    background: rgba(255,255,255,0.5); border: 1px dashed color-mix(in oklab, var(--ink-700) 18%, transparent);
+    font-family: var(--mono); font-size: 9px; line-height: 1.4; color: var(--ink-500); letter-spacing: 0.02em;
+  }
+
+  /* Tabbar */
+  .tabbar {
+    margin-top: auto; padding: 12px 22px 18px; display: flex; justify-content: space-between;
+    background: linear-gradient(to top, var(--cream-100) 70%, transparent);
+  }
+  .tab { width: 40px; height: 40px; border-radius: 14px; display: grid; place-items: center; color: var(--ink-300); }
+  .tab.active { background: var(--ink-900); color: var(--cream-100); }
+  .tab svg { width: 18px; height: 18px; }
+
+  /* —————— Right column: annotations —————— */
+  .annots { padding-top: 32px; display: flex; flex-direction: column; gap: 18px; }
+  .annot {
+    padding: 18px 20px; background: #fff; border-radius: 16px;
+    border: 1px solid color-mix(in oklab, var(--ink-700) 10%, transparent);
+    position: relative;
+  }
+  .annot .num {
+    font-family: var(--mono); font-size: 10px; color: var(--caramel-700); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .annot .num span {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--gold-500); color: #fff;
+    display: grid; place-items: center; font-size: 11px; font-weight: 600;
+  }
+  .annot h4 { font-family: var(--serif); font-size: 22px; font-weight: 400; line-height: 1.1; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .annot p { margin: 0; font-size: 13px; color: var(--ink-500); line-height: 1.5; }
+  .annot.dark { background: var(--ink-900); color: var(--cream-100); border-color: var(--ink-900); }
+  .annot.dark .num { color: var(--gold-500); }
+  .annot.dark .num span { background: var(--gold-500); color: var(--ink-900); }
+  .annot.dark p { color: color-mix(in oklab, var(--cream-100) 75%, transparent); }
+
+  @media (max-width: 1100px) {
+    .stage { grid-template-columns: 1fr; gap: 32px; padding: 32px 24px; }
+    .meta-l { text-align: left; }
+    .meta-l .lede { margin-left: 0; }
+    .phone { margin: 0 auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- LEFT: title -->
+  <div class="meta-l">
+    <div class="eyebrow">Pagina Accessori · Mockup</div>
+    <h1>Lo shop<br />di Ber<i>tie</i>.</h1>
+    <p class="lede">Una vetrina curata, personalizzata sul cane dell'utente. Ogni prodotto rimanda ad Amazon o Arcaplanet con link di affiliazione.</p>
+    <div class="specs">
+      <span>Schermo</span><span><b>390 × 844 (iPhone)</b></span>
+      <span>Sezione</span><span><b>Accessori · tab principale</b></span>
+      <span>Sorgenti</span><span><b>Amazon · Arcaplanet</b></span>
+      <span>Commissione</span><span><b>~8–12% per acquisto</b></span>
+      <span>Stato</span><span><b>Design v0.2 · maggio 2026</b></span>
+    </div>
+  </div>
+
+  <!-- CENTER: phone -->
+  <div class="phone">
+    <div class="screen">
+
+      <div class="statusbar">
+        <span>9:41</span>
+        <div class="right">
+          <svg viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="3" width="3" height="6" rx="0.6"/><rect x="5" y="1.5" width="3" height="9" rx="0.6"/><rect x="10" y="0" width="3" height="12" rx="0.6"/></svg>
+          <svg viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="0.75" y="0.75" width="20" height="10.5" rx="2.5"/><rect x="2.5" y="2.5" width="13" height="7" rx="1" fill="currentColor"/><rect x="22" y="4" width="1.5" height="4" rx="0.5" fill="currentColor"/></svg>
+        </div>
+      </div>
+
+      <!-- Top bar -->
+      <div class="top">
+        <div class="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></div>
+        <div class="title">Acces<i>sori</i></div>
+        <div class="cart">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 7h14l-1.5 10a2 2 0 0 1-2 1.7H8.5a2 2 0 0 1-2-1.7L5 7z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg>
+          <div class="badge">2</div>
+        </div>
+      </div>
+
+      <!-- Personalization -->
+      <div class="pers">
+        <div class="avatar"><img src="assets/bertie-logo.png" alt="" /></div>
+        <div class="info">
+          <div class="k">Scelti per</div>
+          <div class="v">Bertie <span>· Labrador · 3 anni · 28,4 kg</span></div>
+        </div>
+        <div class="change">Cambia</div>
+      </div>
+
+      <!-- Search -->
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" placeholder="Cerca crocchette, pettorine, snack…" />
+      </div>
+
+      <!-- Chips -->
+      <div class="chips">
+        <span class="chip active">Tutti</span>
+        <span class="chip">Alimentazione</span>
+        <span class="chip">Passeggiata</span>
+        <span class="chip">Gioco</span>
+        <span class="chip">Casa</span>
+        <span class="chip">Salute</span>
+      </div>
+
+      <!-- Featured -->
+      <div class="featured">
+        <div class="copy">
+          <span class="tag">Consigliato · scade tra 7gg</span>
+          <h3>L'<i>antiparassitario</i><br />di Bertie è in arrivo.</h3>
+          <p>Pipette spot-on per cani 20–40 kg.</p>
+          <span class="cta">Riacquista · €24,50 →</span>
+        </div>
+        <div class="pill">Pipette</div>
+      </div>
+
+      <!-- Section header -->
+      <div class="section-h">
+        <div class="ttl">Per il <i>Labrador</i></div>
+        <div class="more">Vedi tutti →</div>
+      </div>
+
+      <!-- Products -->
+      <div class="prods">
+        <div class="prod">
+          <div class="img">
+            <span class="src amazon">Amazon</span>
+            <div class="like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></div>
+            <span class="badge-deal">-24%</span>
+            <span class="ph">Pettorina H</span>
+          </div>
+          <div class="body">
+            <div class="cat">Passeggiata · M</div>
+            <div class="ttl">Pettorina ergonomica</div>
+            <div class="why">Distribuisce la trazione sul petto · 25–30 kg.</div>
+            <div class="foot">
+              <div class="price">€24,90 <s>€32,90</s></div>
+              <div class="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prod">
+          <div class="img">
+            <span class="src arca">Arcaplanet</span>
+            <div class="like"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></div>
+            <span class="ph">Crocchette</span>
+          </div>
+          <div class="body">
+            <div class="cat">Alimentazione · Adulto</div>
+            <div class="ttl">Adult Medium 12 kg</div>
+            <div class="why">Cani di taglia media, 3–7 anni.</div>
+            <div class="foot">
+              <div class="price">€39,90</div>
+              <div class="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prod">
+          <div class="img">
+            <span class="src amazon">Amazon</span>
+            <div class="like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></div>
+            <span class="ph">Cuccia</span>
+          </div>
+          <div class="body">
+            <div class="cat">Casa · Riposo</div>
+            <div class="ttl">Memory foam ortopedica</div>
+            <div class="why">Sfoderabile, lavabile a 30°.</div>
+            <div class="foot">
+              <div class="price">€69,00 <s>€89,00</s></div>
+              <div class="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="prod">
+          <div class="img">
+            <span class="src arca">Arcaplanet</span>
+            <div class="like"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></div>
+            <span class="ph">Snack</span>
+          </div>
+          <div class="body">
+            <div class="cat">Snack · Premio</div>
+            <div class="ttl">Bocconcini al pollo</div>
+            <div class="why">250 g · per addestramento.</div>
+            <div class="foot">
+              <div class="price">€6,49</div>
+              <div class="add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Disclaimer -->
+      <div class="disclaim">
+        Bertie può ricevere una commissione sugli acquisti effettuati tramite questi link. Il prezzo per te non cambia.
+      </div>
+
+      <!-- Tabbar -->
+      <div class="tabbar">
+        <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg></div>
+        <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <div class="tab active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 7h14l-1.5 10a2 2 0 0 1-2 1.7H8.5a2 2 0 0 1-2-1.7L5 7z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg></div>
+        <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <div class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT: annotations -->
+  <div class="annots">
+    <div class="annot">
+      <div class="num"><span>1</span>Personalizzazione</div>
+      <h4>Card "Scelti per Bertie".</h4>
+      <p>I prodotti sono filtrati su razza, taglia, età e peso del cane. Sempre visibile in alto: l'utente sa perché vede quei prodotti.</p>
+    </div>
+    <div class="annot dark">
+      <div class="num"><span>2</span>Doppia sorgente</div>
+      <h4>Amazon e Arcaplanet, badge chiari.</h4>
+      <p>Pillola in alto a sinistra di ogni card. Nero su oro per Amazon, oro su nero per Arcaplanet. Niente confusione su chi spedisce.</p>
+    </div>
+    <div class="annot">
+      <div class="num"><span>3</span>Smart re-buy</div>
+      <h4>Suggerimenti contestuali.</h4>
+      <p>L'hero "L'antiparassitario di Bertie è in arrivo" si attiva quando il calendario rileva una scadenza entro 7 giorni. CTA verso il prodotto giusto.</p>
+    </div>
+    <div class="annot">
+      <div class="num"><span>4</span>Trasparenza</div>
+      <h4>Disclaimer in fondo.</h4>
+      <p>Una riga, mono 9px, senza dark pattern: "Bertie può ricevere una commissione". Conformità + fiducia.</p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

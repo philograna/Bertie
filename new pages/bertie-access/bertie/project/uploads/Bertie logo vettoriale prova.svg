@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<svg width="100%" height="100%" viewBox="0 0 2000 2000" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <rect x="0" y="0" width="2000" height="2000" style="fill:rgb(246,236,200);"></rect>
+    <use xlink:href="#_Image1" x="357" y="393" width="1284px" height="1214px"></use>
+    <g transform="matrix(0.682341,0,0,0.632046,-1079.774295,-926.475992)">
+        <use xlink:href="#_Image2" x="2159" y="2232" width="628px" height="1075px"></use>
+    </g>
+    <g transform="matrix(0.682341,0,0,0.632046,-1079.774295,-926.475992)">
+        <use xlink:href="#_Image3" x="2090" y="2383" width="520px" height="928px"></use>
+    </g>
+    <use xlink:href="#_Image4" x="874" y="575" width="787px" height="928px"></use>
+    <defs>
+        <image id="_Image1" width="1284px" height="1214px"></image>
+        <image id="_Image2" width="628px" height="1075px"></image>
+        <image id="_Image3" width="520px" height="928px"></image>
+        <image id="_Image4" width="787px" height="928px"></image>
+    </defs>
+</svg>
