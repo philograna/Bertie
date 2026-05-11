@@ -655,8 +655,59 @@ function AIVetView({ isPremium }) {
 }
 
 // ─── Sezione Diario ─────────────────────────────────────────────────────────
-function LibrettoView({ dogName }) {
-  const [sezione, setSezione] = useState('vaccini')
+function LibrettoView({ dogName, dogId }) {
+  const [sezione, setSezione]     = useState('vaccini')
+  const [vaccini, setVaccini]     = useState([])
+  const [loading, setLoading]     = useState(false)
+  const [showForm, setShowForm]   = useState(false)
+  const [showFoto, setShowFoto]   = useState(false)
+  const [fotoPreview, setFotoPreview] = useState(null)
+  const [saving, setSaving]       = useState(false)
+  const fotoRef = useRef(null)
+
+  const emptyForm = { nome: '', data: '', veterinario: '', lotto: '', prossima: '' }
+  const [form, setForm] = useState(emptyForm)
+  const setF = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  // Carica vaccini da Supabase
+  useEffect(() => {
+    if (!dogId) return
+    setLoading(true)
+    supabase.from('vaccines').select('*').eq('dog_id', dogId).order('date', { ascending: false })
+      .then(({ data }) => { setVaccini(data || []); setLoading(false) })
+  }, [dogId])
+
+  const handleSaveVaccino = async () => {
+    if (!form.nome || !form.data || !dogId) return
+    setSaving(true)
+    const { data, error } = await supabase.from('vaccines').insert({
+      dog_id:       dogId,
+      name:         form.nome,
+      date:         form.data,
+      next_date:    form.prossima || null,
+      reminder_days: 30,
+    }).select().single()
+    if (!error && data) {
+      setVaccini(v => [data, ...v])
+      setForm(emptyForm)
+      setShowForm(false)
+    }
+    setSaving(false)
+  }
+
+  const handleFoto = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => setFotoPreview(ev.target.result)
+    reader.readAsDataURL(file)
+  }
+
+  const formatDate = (iso) => {
+    if (!iso) return ''
+    const d = new Date(iso)
+    return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
+  }
 
   return (
     <div className="flex flex-col gap-4 pb-4">
@@ -679,33 +730,153 @@ function LibrettoView({ dogName }) {
         ))}
       </div>
 
-      {/* Pulsante aggiungi */}
-      <button className="flex items-center justify-center gap-2 w-full py-3 rounded-card text-sm font-bold"
-        style={{ border: '1.5px dashed #E8A859', color: '#E8A859', backgroundColor: 'transparent' }}>
-        <Plus size={15} />
-        {sezione === 'vaccini' ? 'Aggiungi vaccinazione' : 'Aggiungi trattamento'}
-      </button>
+      {/* Pulsanti azione */}
+      {sezione === 'vaccini' && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => { setShowForm(true); setShowFoto(false) }}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-card text-sm font-bold"
+            style={{ border: '1.5px dashed #E8A859', color: '#E8A859', backgroundColor: 'transparent' }}>
+            <Plus size={15} /> Aggiungi
+          </button>
+          <button
+            onClick={() => { setShowFoto(true); setShowForm(false) }}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-card text-sm font-bold"
+            style={{ border: '1.5px dashed #B77336', color: '#B77336', backgroundColor: 'transparent' }}>
+            <Camera size={15} /> Scatta foto
+          </button>
+        </div>
+      )}
+      {sezione === 'antipar' && (
+        <button className="flex items-center justify-center gap-2 w-full py-3 rounded-card text-sm font-bold"
+          style={{ border: '1.5px dashed #E8A859', color: '#E8A859', backgroundColor: 'transparent' }}>
+          <Plus size={15} /> Aggiungi trattamento
+        </button>
+      )}
+
+      {/* Form aggiungi vaccino */}
+      {showForm && sezione === 'vaccini' && (
+        <div className="rounded-[18px] overflow-hidden"
+          style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
+          <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+            <p className="text-sm font-bold" style={{ color: '#2A2C2C' }}>Nuova vaccinazione</p>
+            <button onClick={() => { setShowForm(false); setForm(emptyForm) }}
+              style={{ color: '#A7A8A8', fontSize: 18, lineHeight: 1 }}>✕</button>
+          </div>
+          <div className="px-4 pb-4 flex flex-col gap-3">
+            {[
+              { key: 'nome',        label: 'Nome vaccino *',     type: 'text',  placeholder: 'es. Polivalente DHPP' },
+              { key: 'data',        label: 'Data somministrazione *', type: 'date', placeholder: '' },
+              { key: 'veterinario', label: 'Veterinario',        type: 'text',  placeholder: 'es. Dr. Rossi' },
+              { key: 'lotto',       label: 'Numero lotto',       type: 'text',  placeholder: 'es. A4521X' },
+              { key: 'prossima',    label: 'Prossimo richiamo',  type: 'date',  placeholder: '' },
+            ].map(({ key, label, type, placeholder }) => (
+              <div key={key}>
+                <p className="text-xs font-semibold mb-1" style={{ color: '#6B6E6E' }}>{label}</p>
+                <input
+                  type={type}
+                  placeholder={placeholder}
+                  value={form[key]}
+                  onChange={e => setF(key, e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-[12px] text-sm border-0 outline-none"
+                  style={{ backgroundColor: '#F6ECC8', color: '#2A2C2C' }}
+                />
+              </div>
+            ))}
+            <button
+              onClick={handleSaveVaccino}
+              disabled={!form.nome || !form.data || saving}
+              className="w-full py-3 rounded-pill text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2 mt-1"
+              style={{ backgroundColor: '#E8A859', color: '#FFFFFF' }}>
+              {saving && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+              {saving ? 'Salvataggio…' : 'Salva vaccino'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Feature foto libretto */}
+      {showFoto && sezione === 'vaccini' && (
+        <div className="rounded-[18px] overflow-hidden"
+          style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
+          <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+            <p className="text-sm font-bold" style={{ color: '#2A2C2C' }}>Fotografa il libretto</p>
+            <button onClick={() => { setShowFoto(false); setFotoPreview(null) }}
+              style={{ color: '#A7A8A8', fontSize: 18, lineHeight: 1 }}>✕</button>
+          </div>
+          <div className="px-4 pb-4 flex flex-col gap-3">
+            {!fotoPreview ? (
+              <>
+                <p className="text-xs" style={{ color: '#6B6E6E', lineHeight: 1.5 }}>
+                  Scatta una foto al tuo libretto cartaceo — analizzeremo automaticamente i vaccini registrati.
+                </p>
+                <button
+                  onClick={() => fotoRef.current?.click()}
+                  className="w-full py-10 rounded-[14px] flex flex-col items-center gap-2 transition-opacity active:opacity-70"
+                  style={{ border: '2px dashed #EFE0A8', backgroundColor: '#FBF6E2' }}>
+                  <Camera size={28} style={{ color: '#B77336' }} />
+                  <span className="text-sm font-semibold" style={{ color: '#B77336' }}>
+                    Tocca per scattare
+                  </span>
+                  <span className="text-xs" style={{ color: '#A7A8A8' }}>o scegli dalla galleria</span>
+                </button>
+                <input ref={fotoRef} type="file" accept="image/*" capture="environment"
+                  className="hidden" onChange={handleFoto} />
+              </>
+            ) : (
+              <>
+                <img src={fotoPreview} alt="libretto"
+                  className="w-full rounded-[12px] object-cover" style={{ maxHeight: 220 }} />
+                <div className="rounded-[12px] px-3 py-2.5 flex items-center gap-2"
+                  style={{ backgroundColor: '#F0FBF4' }}>
+                  <span style={{ fontSize: 16 }}>✅</span>
+                  <p className="text-xs font-semibold" style={{ color: '#2E7D52', lineHeight: 1.4 }}>
+                    Foto ricevuta! Il riconoscimento automatico dei vaccini sarà disponibile a breve.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setFotoPreview(null)}
+                  className="text-xs font-semibold text-center"
+                  style={{ color: '#A7A8A8' }}>
+                  Scatta un'altra foto
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Lista vaccini */}
       {sezione === 'vaccini' && (
         <div className="rounded-card overflow-hidden"
           style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
-          {storicoVaccini.map((v, i) => (
-            <div key={i} className="px-4 py-3.5"
-              style={{ borderBottom: i < storicoVaccini.length - 1 ? '1px solid #F6ECC8' : 'none' }}>
+          {loading ? (
+            <div className="px-4 py-6 flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
+                style={{ borderColor: '#E8A859', borderTopColor: 'transparent' }} />
+              <p className="text-sm" style={{ color: '#A7A8A8' }}>Carico vaccini…</p>
+            </div>
+          ) : vaccini.length === 0 ? (
+            <div className="px-4 py-6 text-center">
+              <p className="text-sm" style={{ color: '#A7A8A8' }}>Nessun vaccino registrato</p>
+              <p className="text-xs mt-1" style={{ color: '#C0C0C0' }}>Aggiungi il primo o scatta una foto al libretto</p>
+            </div>
+          ) : vaccini.map((v, i) => (
+            <div key={v.id} className="px-4 py-3.5"
+              style={{ borderBottom: i < vaccini.length - 1 ? '1px solid #F6ECC8' : 'none' }}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
-                  <p className="text-sm font-bold" style={{ color: '#2A2C2C' }}>{v.nome}</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#6B6E6E' }}>
-                    {v.veterinario} · Lotto {v.lotto}
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: '#A7A8A8' }}>
-                    Prossima: {v.prossima}
-                  </p>
+                  <p className="text-sm font-bold" style={{ color: '#2A2C2C' }}>{v.name}</p>
+                  {v.notes && <p className="text-xs mt-0.5" style={{ color: '#6B6E6E' }}>{v.notes}</p>}
+                  {v.next_date && (
+                    <p className="text-xs mt-0.5" style={{ color: '#A7A8A8' }}>
+                      Prossima: {formatDate(v.next_date)}
+                    </p>
+                  )}
                 </div>
                 <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-pill mt-0.5"
                   style={{ backgroundColor: '#F6ECC8', color: '#B77336' }}>
-                  {v.data}
+                  {formatDate(v.date)}
                 </span>
               </div>
             </div>
@@ -1134,6 +1305,7 @@ export default function Dashboard() {
   const [dogWeight, setDogWeight]     = useState(null)
   const [dogAge, setDogAge]           = useState(null)
   const [dogSex, setDogSex]           = useState(null)
+  const [dogId, setDogId]             = useState(null)
   const [userName, setUserName]       = useState(null)
 
   // Carica utente + stato premium + profilo cane
@@ -1152,6 +1324,7 @@ export default function Dashboard() {
     ])
     if (profile) setIsPremium(!!profile.premium)
     if (dog) {
+      setDogId(dog.id)
       setDogName(dog.name)
       setDogRazza(dog.breed)
       setDogPhotoUrl(dog.photo_url || null)
@@ -1259,7 +1432,7 @@ export default function Dashboard() {
         {tab === 'vaccini'   && <SaluteView dogName={dogName} dogRazza={dogRazza} photoUrl={dogPhotoUrl} dogWeight={dogWeight} dogAge={dogAge} dogSex={dogSex} userName={userName} />}
         {tab === 'mappa'     && <MappaView />}
         {tab === 'aivet'     && <AIVetView isPremium={isPremium} />}
-        {tab === 'diario'    && <LibrettoView dogName={dogName} />}
+        {tab === 'diario'    && <LibrettoView dogName={dogName} dogId={dogId} />}
         {tab === 'accessori' && <AccessoriView dogName={dogName} dogRazza={dogRazza} />}
         {tab === 'profilo'   && (
           <ProfiloView
