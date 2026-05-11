@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './lib/auth'
 import Home from './pages/Home'
 import Auth from './pages/Auth'
 import Onboarding from './pages/Onboarding'
@@ -8,6 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
   return (
+    <AuthProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -25,5 +27,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
+    </AuthProvider>
   )
 }
