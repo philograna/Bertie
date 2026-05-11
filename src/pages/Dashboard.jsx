@@ -827,7 +827,7 @@ function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeE
           style={{ backgroundColor: 'rgba(255,255,255,0.22)', color: '#FFFFFF',
             border: '1px solid rgba(255,255,255,0.35)' }}
         >
-          {dogName ? '✏️ Modifica profilo' : '+ Aggiungi profilo'}
+          {dogName ? 'Modifica profilo' : '+ Aggiungi profilo'}
         </button>
       </div>
 
