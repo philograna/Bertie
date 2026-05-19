@@ -68,31 +68,7 @@ function Navbar() {
         {/* Logo placeholder — vuoto */}
         <div />
 
-        {/* Links desktop */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-          <a href="#features" style={{ fontSize: 14, fontWeight: 500, color: C.muted,
-            textDecoration: 'none', display: 'none' }}
-            className="md-show">Come funziona</a>
-          <a href="#pricing" style={{ fontSize: 14, fontWeight: 500, color: C.muted,
-            textDecoration: 'none', display: 'none' }}
-            className="md-show">Prezzi</a>
-
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={() => navigate('/login')}
-              style={{ fontSize: 13, fontWeight: 500, color: C.bowtie,
-                background: 'none', border: 'none', cursor: 'pointer', padding: '8px 12px' }}>
-              Accedi
-            </button>
-            <button onClick={() => navigate('/registrati')}
-              style={{ fontSize: 13, fontWeight: 600, color: C.white,
-                backgroundColor: C.gold, border: 'none', borderRadius: 999,
-                padding: '9px 20px', cursor: 'pointer', transition: 'background-color 0.2s' }}
-              onMouseOver={e => e.currentTarget.style.backgroundColor = C.honey}
-              onMouseOut={e => e.currentTarget.style.backgroundColor = C.gold}>
-              Inizia gratis
-            </button>
-          </div>
-        </div>
+        <div />
       </div>
     </nav>
   )
@@ -132,13 +108,13 @@ function Hero() {
 
   return (
     <section style={{
-      minHeight: '100svh', backgroundColor: C.biscuit,
+      backgroundColor: C.biscuit,
       backgroundImage: `
         radial-gradient(600px 400px at 80% 20%, rgba(232,168,89,0.18), transparent 65%),
         radial-gradient(400px 300px at 10% 80%, rgba(183,115,54,0.10), transparent 60%)
       `,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '80px 24px 48px',
+      padding: '40px 24px 48px',
     }}>
       <div style={{ maxWidth: 560, width: '100%', textAlign: 'center' }}>
 
@@ -184,7 +160,6 @@ function Hero() {
             maxWidth: 440, margin: '0 auto 28px',
           }}>
             Vaccini, antiparassitari, mappa dog-friendly e molto altro.
-            In italiano, fatto per chi ama davvero il proprio cane.
           </p>
         </FadeIn>
 
