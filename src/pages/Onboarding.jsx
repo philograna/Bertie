@@ -1,57 +1,123 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
 import AppShell from '../components/AppShell'
 import { supabase } from '../lib/supabase'
 
-const RAZZE = ['Labrador', 'Golden Retriever', 'Pastore Tedesco', 'Bulldog Fr.', 'Beagle', 'Chihuahua', 'Barboncino', 'Boxer', 'Husky', 'Altro']
-const ETA   = ['< 1 anno', '1 anno', '2 anni', '3 anni', '4 anni', '5 anni', '6 anni', '7+ anni']
+const RAZZE = [
+  'Labrador Retriever', 'Golden Retriever', 'Pastore Tedesco', 'Bulldog Francese',
+  'Bulldog Inglese', 'Barboncino', 'Beagle', 'Rottweiler', 'Yorkshire Terrier', 'Boxer',
+  'Dachshund', 'Siberian Husky', 'Dobermann', 'Shih Tzu', 'Border Collie', 'Cocker Spaniel',
+  'Maltese', 'Chihuahua', 'Setter Irlandese', 'Bracco Italiano', 'Lagotto Romagnolo',
+  'Spinone Italiano', 'Cane Corso', 'Segugio Italiano', 'Volpino Italiano',
+  "Cirneco dell'Etna", 'Maremmano', 'Pastore Bergamasco', 'Bolognese',
+  'Levriero Italiano', 'Schnauzer', 'Alano', 'Shar Pei', 'Chow Chow', 'Akita Inu',
+  'Shiba Inu', 'Samoiedo', 'Terranova', 'San Bernardo', 'Dalmatico', 'Weimaraner',
+  'Jack Russell Terrier', 'West Highland Terrier', 'Pomerania', 'Carlino', 'Meticcio',
+]
 
 const G = {
-  gold:      '#E8A859',
-  goldHover: '#D28C45',
-  cream:     '#F6ECC8',
-  cream50:   '#FBF6E2',
-  cream200:  '#EFE0A8',
-  ink:       '#2A2C2C',
-  ink500:    '#6B6E6E',
+  gold:     '#E8A859',
+  cream:    '#F6ECC8',
+  cream200: '#EFE0A8',
+  ink:      '#2A2C2C',
+  ink500:   '#6B6E6E',
+}
+
+function calcAge(dateStr) {
+  if (!dateStr) return null
+  const birth = new Date(dateStr)
+  const now   = new Date()
+  let years  = now.getFullYear() - birth.getFullYear()
+  let months = now.getMonth()    - birth.getMonth()
+  if (months < 0) { years--; months += 12 }
+  if (years === 0 && months === 0) return 'meno di un mese'
+  const parts = []
+  if (years  > 0) parts.push(`${years}  ${years  === 1 ? 'anno'  : 'anni'}`)
+  if (months > 0) parts.push(`${months} ${months === 1 ? 'mese'  : 'mesi'}`)
+  return parts.join(' e ')
 }
 
 export default function Onboarding() {
-  const navigate = useNavigate()
-  const [step, setStep]       = useState(1)
-  const [saving, setSaving]   = useState(false)
+  const navigate      = useNavigate()
+  const photoRef      = useRef(null)
+
+  const [step, setStep]           = useState(1)
+  const [saving, setSaving]       = useState(false)
   const [saveError, setSaveError] = useState('')
-  const [dog, setDog]         = useState({ nome: '', razza: '', eta: '', sesso: '', peso: '' })
-  const set = (k, v) => setDog((d) => ({ ...d, [k]: v }))
 
+  const [dog, setDog] = useState({
+    nome: '', razza: '', microchip: '',
+    dataNascita: '', sesso: '', peso: '',
+    photoFile: null, photoPreview: null,
+  })
+  const [razzaQuery,    setRazzaQuery]    = useState('')
+  const [showDropdown,  setShowDropdown]  = useState(false)
+
+  const set = (k, v) => setDog(d => ({ ...d, [k]: v }))
+
+  /* ── Autocomplete ── */
+  const filtered = razzaQuery.length > 0
+    ? RAZZE.filter(r => r.toLowerCase().includes(razzaQuery.toLowerCase())).slice(0, 5)
+    : []
+
+  const selectRazza = (r) => {
+    set('razza', r)
+    setRazzaQuery(r)
+    setShowDropdown(false)
+  }
+
+  const handleMicrochip = (v) => set('microchip', v.replace(/\D/g, '').slice(0, 15))
+
+  /* ── Foto ── */
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setDog(d => ({ ...d, photoFile: file, photoPreview: URL.createObjectURL(file) }))
+  }
+
+  /* ── Validazione step ── */
   const canNext1 = dog.nome.trim() && dog.razza
-  const canNext2 = dog.eta && dog.sesso
+  const ageLabel = calcAge(dog.dataNascita)
+  const today    = new Date().toISOString().split('T')[0]
 
+  /* ── Salvataggio ── */
   const handleSave = async () => {
-    setSaving(true)
+    setSaving(true); setSaveError('')
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/login'); return }
 
-      const payload = {
-        user_id:   user.id,
-        name:      dog.nome.trim(),
-        breed:     dog.razza,
-        age_label: dog.eta,
-        sex:       dog.sesso,
-        weight:    dog.peso ? parseFloat(dog.peso.replace(',', '.')) : null,
+      // Upload foto (opzionale — errore silenzioso)
+      let photoUrl = null
+      if (dog.photoFile) {
+        const ext  = dog.photoFile.name.split('.').pop()
+        const path = `${user.id}/dog.${ext}`
+        const { error: upErr } = await supabase.storage
+          .from('dog-photos')
+          .upload(path, dog.photoFile, { upsert: true })
+        if (!upErr) {
+          const { data: urlData } = supabase.storage.from('dog-photos').getPublicUrl(path)
+          photoUrl = urlData.publicUrl
+        }
       }
 
-      // Upsert: aggiorna se esiste già un cane per questo utente, altrimenti inserisce
+      const payload = {
+        user_id:    user.id,
+        name:       dog.nome.trim(),
+        breed:      dog.razza,
+        age_label:  ageLabel || '',
+        birth_date: dog.dataNascita || null,
+        sex:        dog.sesso,
+        weight:     dog.peso ? parseFloat(dog.peso.replace(',', '.')) : null,
+        microchip:  dog.microchip || null,
+        ...(photoUrl ? { photo_url: photoUrl } : {}),
+      }
+
       const { error } = await supabase
         .from('dogs')
         .upsert(payload, { onConflict: 'user_id', ignoreDuplicates: false })
-
-      if (error) {
-        console.error('Supabase error:', error)
-        throw error
-      }
+      if (error) throw error
       setStep(3)
     } catch (err) {
       console.error('Errore salvataggio:', err)
@@ -65,135 +131,184 @@ export default function Onboarding() {
     <AppShell>
       <div className="flex-1 flex flex-col px-6 pt-14 pb-10">
 
-        {/* Header con step bar */}
+        {/* ── Step bar ── */}
         <div className="flex items-center gap-3 mb-6">
           {step > 1 && step < 3 && (
-            <button
-              onClick={() => setStep((s) => s - 1)}
+            <button onClick={() => setStep(s => s - 1)}
               className="w-9 h-9 flex items-center justify-center rounded-full"
-              style={{ backgroundColor: G.cream }}
-            >
+              style={{ backgroundColor: G.cream }}>
               <ChevronLeft size={18} style={{ color: G.ink }} />
             </button>
           )}
           <div className="flex-1">
             <div className="flex gap-1.5 mb-3">
-              {[1, 2, 3].map((s) => (
-                <div
-                  key={s}
-                  className="h-1.5 flex-1 rounded-tag transition-all duration-300"
-                  style={{ backgroundColor: s <= step ? G.gold : G.cream200 }}
-                />
+              {[1, 2, 3].map(s => (
+                <div key={s} className="h-1.5 flex-1 rounded-full transition-all duration-300"
+                  style={{ backgroundColor: s <= step ? G.gold : G.cream200 }} />
               ))}
             </div>
             <p className="text-xs" style={{ color: G.ink500 }}>Passo {step} di 3</p>
           </div>
         </div>
 
-        {/* Step 1 — Nome + Razza */}
+        {/* ════════════════ STEP 1 ════════════════ */}
         {step === 1 && (
           <>
             <h1 className="text-2xl font-extrabold mb-1" style={{ color: G.ink }}>
               Come si chiama il tuo cane? 🐶
             </h1>
-            <p className="text-sm mb-6" style={{ color: G.ink500 }}>Aggiungi il profilo del tuo amico a 4 zampe.</p>
+            <p className="text-sm mb-5" style={{ color: G.ink500 }}>
+              Aggiungi il profilo del tuo amico a 4 zampe.
+            </p>
 
-            <input
-              type="text"
-              placeholder="Nome del cane"
-              value={dog.nome}
-              onChange={(e) => set('nome', e.target.value)}
-              className="w-full px-5 py-4 rounded-card text-base border-0 focus:outline-none focus:ring-2 ring-sky-blue placeholder-slate-gray mb-5"
-              style={{ backgroundColor: G.cream, color: G.ink }}
-            />
-
-            <p className="text-sm font-semibold mb-3" style={{ color: G.ink }}>Razza</p>
-            <div className="grid grid-cols-2 gap-2 mb-auto">
-              {RAZZE.map((r) => (
-                <button
-                  key={r}
-                  onClick={() => set('razza', r)}
-                  className="py-3 px-4 rounded-card text-sm font-medium text-left transition-colors"
-                  style={{
-                    backgroundColor: dog.razza === r ? G.gold : G.cream,
-                    color: dog.razza === r ? '#FFFFFF' : G.ink500,
-                  }}
-                >
-                  {r}
-                </button>
-              ))}
+            {/* Foto profilo */}
+            <input ref={photoRef} type="file" accept="image/*"
+              style={{ display: 'none' }} onChange={handlePhotoSelect} />
+            <div className="flex flex-col items-center mb-5">
+              <button onClick={() => photoRef.current.click()}
+                style={{
+                  width: 88, height: 88, borderRadius: '50%',
+                  backgroundColor: G.cream200,
+                  border: `2.5px dashed ${G.gold}`,
+                  overflow: 'hidden',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer',
+                }}>
+                {dog.photoPreview
+                  ? <img src={dog.photoPreview} alt="preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <span style={{ fontSize: 34 }}>🐶</span>
+                }
+              </button>
+              <p className="text-xs mt-2" style={{ color: G.ink500 }}>
+                {dog.photoPreview ? 'Tocca per cambiare' : 'Aggiungi foto (opzionale)'}
+              </p>
             </div>
 
-            <button
-              onClick={() => canNext1 && setStep(2)}
-              disabled={!canNext1}
+            {/* Nome */}
+            <input type="text" placeholder="Nome del cane"
+              value={dog.nome} onChange={e => set('nome', e.target.value)}
+              className="w-full px-5 py-4 rounded-card text-base border-0 focus:outline-none focus:ring-2 placeholder-slate-gray mb-4"
+              style={{ backgroundColor: G.cream, color: G.ink }} />
+
+            {/* Razza autocomplete */}
+            <p className="text-sm font-semibold mb-2" style={{ color: G.ink }}>Razza</p>
+            <div style={{ position: 'relative' }} className="mb-4">
+              <input type="text" placeholder="Cerca la razza..."
+                value={razzaQuery}
+                onChange={e => { setRazzaQuery(e.target.value); set('razza', ''); setShowDropdown(true) }}
+                onFocus={() => setShowDropdown(true)}
+                onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+                className="w-full px-5 py-4 rounded-card text-base border-0 focus:outline-none focus:ring-2 placeholder-slate-gray"
+                style={{ backgroundColor: G.cream, color: G.ink }} />
+
+              {showDropdown && (filtered.length > 0 || razzaQuery.length > 0) && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 50,
+                  backgroundColor: '#FFFFFF', borderRadius: 10,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.12)', overflow: 'hidden',
+                }}>
+                  {filtered.map(r => (
+                    <button key={r} onMouseDown={() => selectRazza(r)}
+                      className="w-full text-left px-5 py-3 text-sm transition-colors"
+                      style={{ color: G.ink, borderBottom: `1px solid ${G.cream200}`,
+                        backgroundColor: 'transparent' }}
+                      onMouseOver={e => e.currentTarget.style.backgroundColor = G.cream}
+                      onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                      {r}
+                    </button>
+                  ))}
+                  <button onMouseDown={() => { set('razza', razzaQuery || 'Altra razza'); setRazzaQuery(razzaQuery || 'Altra razza'); setShowDropdown(false) }}
+                    className="w-full text-left px-5 py-3 text-sm"
+                    style={{ color: G.ink500 }}>
+                    Altra razza
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Microchip */}
+            <p className="text-sm font-semibold mb-1" style={{ color: G.ink }}>
+              Numero microchip{' '}
+              <span style={{ color: G.ink500, fontWeight: 400 }}>(opzionale)</span>
+            </p>
+            <input type="text" inputMode="numeric"
+              placeholder="Es. 380260004123456"
+              value={dog.microchip}
+              onChange={e => handleMicrochip(e.target.value)}
+              className="w-full px-5 py-4 rounded-card text-base border-0 focus:outline-none focus:ring-2 placeholder-slate-gray mb-1"
+              style={{ backgroundColor: G.cream, color: G.ink }} />
+            <p className="text-xs mb-auto" style={{ color: G.ink500 }}>
+              15 cifre — lo trovi sul libretto sanitario
+            </p>
+
+            <button onClick={() => canNext1 && setStep(2)} disabled={!canNext1}
               className="mt-6 w-full py-4 rounded-btn font-semibold text-base disabled:opacity-40 transition-colors"
-              style={{ backgroundColor: G.gold, color: '#FFFFFF' }}
-            >
+              style={{ backgroundColor: G.gold, color: '#FFFFFF' }}>
               Continua →
             </button>
           </>
         )}
 
-        {/* Step 2 — Età + Sesso + Peso */}
+        {/* ════════════════ STEP 2 ════════════════ */}
         {step === 2 && (
           <>
             <h1 className="text-2xl font-extrabold mb-1" style={{ color: G.ink }}>
               Quanti anni ha {dog.nome}? 🎂
             </h1>
-            <p className="text-sm mb-6" style={{ color: G.ink500 }}>Ci aiuta a calcolare i reminder giusti.</p>
+            <p className="text-sm mb-5" style={{ color: G.ink500 }}>
+              Ci aiuta a calcolare i reminder giusti.
+            </p>
 
-            <p className="text-sm font-semibold mb-3" style={{ color: G.ink }}>Età</p>
-            <div className="grid grid-cols-2 gap-2 mb-5">
-              {ETA.map((e) => (
-                <button
-                  key={e}
-                  onClick={() => set('eta', e)}
-                  className="py-3 rounded-card text-sm font-medium transition-colors"
-                  style={{
-                    backgroundColor: dog.eta === e ? G.gold : G.cream,
-                    color: dog.eta === e ? '#FFFFFF' : G.ink500,
-                  }}
-                >
-                  {e}
-                </button>
-              ))}
+            {/* Data di nascita */}
+            <p className="text-sm font-semibold mb-2" style={{ color: G.ink }}>
+              Data di nascita{' '}
+              <span style={{ color: G.ink500, fontWeight: 400 }}>(opzionale)</span>
+            </p>
+            <input type="date" max={today}
+              value={dog.dataNascita}
+              onChange={e => set('dataNascita', e.target.value)}
+              className="w-full px-5 py-4 rounded-card text-base border-0 focus:outline-none mb-2"
+              style={{
+                backgroundColor: G.cream,
+                color: dog.dataNascita ? G.ink : G.ink500,
+                WebkitAppearance: 'none',
+              }} />
+            <div className="mb-5" style={{ minHeight: 20 }}>
+              {ageLabel && (
+                <p className="text-sm font-medium" style={{ color: G.gold }}>
+                  🎂 {dog.nome} ha {ageLabel}
+                </p>
+              )}
             </div>
 
+            {/* Sesso */}
             <p className="text-sm font-semibold mb-3" style={{ color: G.ink }}>Sesso</p>
             <div className="flex gap-3 mb-5">
               {[{ v: 'M', l: '♂ Maschio' }, { v: 'F', l: '♀ Femmina' }].map(({ v, l }) => (
-                <button
-                  key={v}
-                  onClick={() => set('sesso', v)}
+                <button key={v} onClick={() => set('sesso', v)}
                   className="flex-1 py-3.5 rounded-card text-sm font-medium transition-colors"
                   style={{
                     backgroundColor: dog.sesso === v ? G.gold : G.cream,
                     color: dog.sesso === v ? '#FFFFFF' : G.ink500,
-                  }}
-                >
+                  }}>
                   {l}
                 </button>
               ))}
             </div>
 
+            {/* Peso */}
             <p className="text-sm font-semibold mb-2" style={{ color: G.ink }}>
-              Peso <span style={{ color: G.ink500, fontWeight: 400 }}>(opzionale)</span>
+              Peso{' '}
+              <span style={{ color: G.ink500, fontWeight: 400 }}>(opzionale)</span>
             </p>
             <div className="relative mb-auto">
-              <input
-                type="number"
-                inputMode="decimal"
-                placeholder="es. 28.5"
-                value={dog.peso}
-                onChange={(e) => set('peso', e.target.value)}
+              <input type="number" inputMode="decimal" placeholder="es. 28.5"
+                value={dog.peso} onChange={e => set('peso', e.target.value)}
                 className="w-full px-5 py-4 rounded-card text-base border-0 focus:outline-none focus:ring-2 placeholder-slate-gray pr-14"
-                style={{ backgroundColor: G.cream, color: G.ink }}
-              />
+                style={{ backgroundColor: G.cream, color: G.ink }} />
               <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm font-semibold"
-                style={{ color: G.ink500 }}>
-                kg
-              </span>
+                style={{ color: G.ink500 }}>kg</span>
             </div>
 
             {saveError && (
@@ -202,52 +317,56 @@ export default function Onboarding() {
                 ⚠️ {saveError}
               </p>
             )}
-            <button
-              onClick={() => { setSaveError(''); canNext2 && handleSave() }}
-              disabled={!canNext2 || saving}
+
+            <button onClick={() => { setSaveError(''); dog.sesso && handleSave() }}
+              disabled={!dog.sesso || saving}
               className="mt-4 w-full py-4 rounded-btn font-semibold text-base disabled:opacity-40 flex items-center justify-center gap-2"
-              style={{ backgroundColor: G.gold, color: '#FFFFFF' }}
-            >
+              style={{ backgroundColor: G.gold, color: '#FFFFFF' }}>
               {saving && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
               {saving ? 'Salvataggio…' : 'Salva →'}
             </button>
           </>
         )}
 
-        {/* Step 3 — Celebrazione */}
+        {/* ════════════════ STEP 3 ════════════════ */}
         {step === 3 && (
           <div className="flex flex-col items-center justify-center flex-1 text-center gap-5">
-            <div className="text-7xl">🎉</div>
+            {dog.photoPreview
+              ? <img src={dog.photoPreview} alt={dog.nome}
+                  style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover',
+                    border: `3px solid ${G.gold}` }} />
+              : <div className="text-7xl">🎉</div>
+            }
             <div>
               <h1 className="text-2xl font-extrabold mb-2" style={{ color: G.ink }}>
                 {dog.nome} è pronto!
               </h1>
               <p className="text-sm" style={{ color: G.ink500 }}>
-                {dog.razza} · {dog.eta} · {dog.sesso === 'M' ? 'Maschio' : 'Femmina'}
-                {dog.peso ? ` · ${dog.peso} kg` : ''}
+                {[
+                  dog.razza,
+                  ageLabel,
+                  dog.sesso ? (dog.sesso === 'M' ? 'Maschio' : 'Femmina') : null,
+                  dog.peso ? `${dog.peso} kg` : null,
+                ].filter(Boolean).join(' · ')}
               </p>
             </div>
             <p className="text-sm max-w-xs" style={{ color: G.ink500 }}>
               Ora aggiungi i vaccini e attiva i reminder push — è gratuito.
             </p>
             <div className="w-full flex flex-col gap-3 mt-4">
-              <button
-                onClick={() => navigate('/dashboard')}
+              <button onClick={() => navigate('/dashboard')}
                 className="w-full py-4 rounded-btn font-semibold text-base"
-                style={{ backgroundColor: G.gold, color: '#FFFFFF' }}
-              >
+                style={{ backgroundColor: G.gold, color: '#FFFFFF' }}>
                 Vai alla dashboard →
               </button>
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="text-sm font-medium"
-                style={{ color: G.ink500 }}
-              >
+              <button onClick={() => navigate('/dashboard')}
+                className="text-sm font-medium" style={{ color: G.ink500 }}>
                 Farlo dopo
               </button>
             </div>
           </div>
         )}
+
       </div>
     </AppShell>
   )
