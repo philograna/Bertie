@@ -94,6 +94,65 @@ function useDailyTip() {
   return { tip, loading: false }
 }
 
+// ─── BottomDrawer — overlay tap + swipe-down + handle tap ──────────────────
+function BottomDrawer({ open, onClose, children, style = {} }) {
+  const touchStartY  = useRef(null)
+  const panelRef     = useRef(null)
+
+  if (!open) return null
+
+  const handlePanelTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY
+  }
+  const handlePanelTouchEnd = (e) => {
+    if (touchStartY.current === null) return
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current
+    touchStartY.current = null
+    const scrollTop = panelRef.current?.scrollTop ?? 0
+    if (deltaY > 80 && scrollTop === 0) onClose()
+  }
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:200,
+      display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
+
+      {/* Overlay — tap to close */}
+      <div
+        style={{ position:'absolute', inset:0, backgroundColor:'rgba(0,0,0,0.45)' }}
+        onClick={onClose}
+        onTouchEnd={(e) => { e.preventDefault(); onClose() }}
+      />
+
+      {/* Panel */}
+      <div
+        ref={panelRef}
+        onTouchStart={handlePanelTouchStart}
+        onTouchEnd={handlePanelTouchEnd}
+        style={{
+          position:'relative', backgroundColor:'#FFFFFF',
+          borderRadius:'20px 20px 0 0', padding:'12px 20px 40px',
+          maxHeight:'85vh', overflowY:'auto',
+          ...style,
+        }}>
+
+        {/* Handle bar — tap to close */}
+        <div
+          onClick={onClose}
+          onTouchEnd={(e) => { e.stopPropagation(); onClose() }}
+          style={{
+            width:36, height:5, borderRadius:999,
+            backgroundColor:'#CDCDCD',
+            margin:'0 auto 16px',
+            cursor:'pointer',
+          }}
+        />
+
+        {children}
+      </div>
+    </div>
+  )
+}
+
 function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, userName }) {
   const [listaVaccini, setListaVaccini] = useState(vaccini)
   const [rinnovaTarget, setRinnovaTarget] = useState(null) // vaccino da rinnovare
@@ -267,65 +326,45 @@ function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, us
 
       </div>
 
-      {/* ── Modal Rinnova vaccino ── */}
-      {rinnovaTarget && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 200,
-          display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-        }}>
-          {/* Overlay */}
-          <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)' }}
-            onClick={() => setRinnovaTarget(null)} />
+      {/* ── Drawer Aggiorna vaccino ── */}
+      <BottomDrawer open={!!rinnovaTarget} onClose={() => { setRinnovaTarget(null); setNuovaData('') }}>
+        <p style={{ fontSize: 16, fontWeight: 700, color: '#2A2C2C', marginBottom: 4 }}>
+          Aggiorna vaccino
+        </p>
+        <p style={{ fontSize: 13, color: '#6B6E6E', marginBottom: 20 }}>
+          {rinnovaTarget?.nome}
+        </p>
 
-          {/* Drawer */}
-          <div style={{
-            position: 'relative', backgroundColor: '#FFFFFF',
-            borderRadius: '20px 20px 0 0', padding: '24px 20px 36px',
-            boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
+        <label style={{ fontSize: 12, fontWeight: 600, color: '#6B6E6E',
+          display: 'block', marginBottom: 8 }}>
+          Nuova data di scadenza
+        </label>
+        <input type="date"
+          min={new Date().toISOString().split('T')[0]}
+          value={nuovaData}
+          onChange={e => setNuovaData(e.target.value)}
+          style={{
+            width: '100%', padding: '13px 16px', borderRadius: 12,
+            border: '1.5px solid #EFE0A8', backgroundColor: '#FBF6E2',
+            fontSize: 15, color: '#2A2C2C', outline: 'none',
+            marginBottom: 16, boxSizing: 'border-box',
+          }} />
+
+        <button onClick={handleRinnova} disabled={!nuovaData || rinnovaSaving}
+          style={{
+            width: '100%', padding: '14px', borderRadius: 999,
+            backgroundColor: '#E8A859', color: '#FFFFFF',
+            fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer',
+            opacity: !nuovaData || rinnovaSaving ? 0.5 : 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           }}>
-            {/* Handle */}
-            <div style={{ width: 36, height: 4, borderRadius: 999,
-              backgroundColor: '#EFE0A8', margin: '0 auto 20px' }} />
-
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#2A2C2C', marginBottom: 4 }}>
-              Aggiorna vaccino
-            </p>
-            <p style={{ fontSize: 13, color: '#6B6E6E', marginBottom: 20 }}>
-              {rinnovaTarget.nome}
-            </p>
-
-            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B6E6E',
-              display: 'block', marginBottom: 8 }}>
-              Nuova data di scadenza
-            </label>
-            <input type="date"
-              min={new Date().toISOString().split('T')[0]}
-              value={nuovaData}
-              onChange={e => setNuovaData(e.target.value)}
-              style={{
-                width: '100%', padding: '13px 16px', borderRadius: 12,
-                border: '1.5px solid #EFE0A8', backgroundColor: '#FBF6E2',
-                fontSize: 15, color: '#2A2C2C', outline: 'none',
-                marginBottom: 16, boxSizing: 'border-box',
-              }} />
-
-            <button onClick={handleRinnova} disabled={!nuovaData || rinnovaSaving}
-              style={{
-                width: '100%', padding: '14px', borderRadius: 999,
-                backgroundColor: '#E8A859', color: '#FFFFFF',
-                fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer',
-                opacity: !nuovaData || rinnovaSaving ? 0.5 : 1,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}>
-              {rinnovaSaving
-                ? <span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)',
-                    borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block',
-                    animation: 'spin 0.7s linear infinite' }} />
-                : 'Salva rinnovo'}
-            </button>
-          </div>
-        </div>
-      )}
+          {rinnovaSaving
+            ? <span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)',
+                borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block',
+                animation: 'spin 0.7s linear infinite' }} />
+            : 'Salva rinnovo'}
+        </button>
+      </BottomDrawer>
 
     </div>
   )
@@ -1070,17 +1109,7 @@ function LibrettoView({ dogName, dogId }) {
       )}
 
       {/* ── Drawer Aggiungi ── */}
-      {showDrawer && (
-        <div style={{ position:'fixed', inset:0, zIndex:200,
-          display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
-          <div style={{ position:'absolute', inset:0, backgroundColor:'rgba(0,0,0,0.4)' }}
-            onClick={() => setShowDrawer(false)} />
-          <div style={{ position:'relative', backgroundColor:'#FFFFFF',
-            borderRadius:'20px 20px 0 0', padding:'20px 20px 40px',
-            maxHeight:'85vh', overflowY:'auto' }}>
-            {/* Handle */}
-            <div style={{ width:36, height:4, borderRadius:999, backgroundColor:'#EFE0A8',
-              margin:'0 auto 16px' }} />
+      <BottomDrawer open={showDrawer} onClose={() => setShowDrawer(false)}>
 
             <p className="text-base font-bold mb-4" style={{ color:'#2A2C2C' }}>
               {sezione === 'vaccini' ? 'Nuova vaccinazione' : 'Nuovo trattamento'}
@@ -1213,9 +1242,7 @@ function LibrettoView({ dogName, dogId }) {
                 </button>
               </>
             )}
-          </div>
-        </div>
-      )}
+      </BottomDrawer>
 
     </div>
   )
