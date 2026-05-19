@@ -24,6 +24,8 @@ const G = {
   ink500:   '#6B6E6E',
 }
 
+const NUNITO = '"Nunito", system-ui, sans-serif'
+
 function calcAge(dateStr) {
   if (!dateStr) return null
   const birth = new Date(dateStr)
@@ -41,6 +43,7 @@ function calcAge(dateStr) {
 export default function Onboarding() {
   const navigate      = useNavigate()
   const photoRef      = useRef(null)
+  const cameraRef     = useRef(null)
 
   const [step, setStep]           = useState(1)
   const [saving, setSaving]       = useState(false)
@@ -129,7 +132,7 @@ export default function Onboarding() {
 
   return (
     <AppShell>
-      <div className="flex-1 flex flex-col px-6 pt-14 pb-10">
+      <div className="flex-1 flex flex-col px-6 pt-14 pb-10" style={{ fontFamily: NUNITO, textAlign: 'center' }}>
 
         {/* ── Step bar ── */}
         <div className="flex items-center gap-3 mb-6">
@@ -155,44 +158,26 @@ export default function Onboarding() {
         {step === 1 && (
           <>
             <h1 className="text-2xl font-extrabold mb-1" style={{ color: G.ink }}>
-              Come si chiama il tuo cane? 🐶
+              Raccontaci di più del tuo amico
             </h1>
             <p className="text-sm mb-5" style={{ color: G.ink500 }}>
-              Aggiungi il profilo del tuo amico a 4 zampe.
+              Come si chiama il tuo cane?
             </p>
 
-            {/* Foto profilo */}
+            {/* Input foto (hidden, usati in step 2 e 3) */}
             <input ref={photoRef} type="file" accept="image/*"
               style={{ display: 'none' }} onChange={handlePhotoSelect} />
-            <div className="flex flex-col items-center mb-5">
-              <button onClick={() => photoRef.current.click()}
-                style={{
-                  width: 88, height: 88, borderRadius: '50%',
-                  backgroundColor: G.cream200,
-                  border: `2.5px dashed ${G.gold}`,
-                  overflow: 'hidden',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer',
-                }}>
-                {dog.photoPreview
-                  ? <img src={dog.photoPreview} alt="preview"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <span style={{ fontSize: 34 }}>🐶</span>
-                }
-              </button>
-              <p className="text-xs mt-2" style={{ color: G.ink500 }}>
-                {dog.photoPreview ? 'Tocca per cambiare' : 'Aggiungi foto (opzionale)'}
-              </p>
-            </div>
+            <input ref={cameraRef} type="file" accept="image/*" capture="environment"
+              style={{ display: 'none' }} onChange={handlePhotoSelect} />
 
             {/* Nome */}
             <input type="text" placeholder="Nome del cane"
               value={dog.nome} onChange={e => set('nome', e.target.value)}
               className="w-full px-5 py-4 rounded-card text-base border-0 focus:outline-none focus:ring-2 placeholder-slate-gray mb-4"
-              style={{ backgroundColor: G.cream, color: G.ink }} />
+              style={{ backgroundColor: G.cream, color: G.ink, textAlign: 'center' }} />
 
             {/* Razza autocomplete */}
-            <p className="text-sm font-semibold mb-2" style={{ color: G.ink }}>Razza</p>
+            <p className="text-sm font-semibold mb-2" style={{ color: G.ink }}>Che tipo di cane è?</p>
             <div style={{ position: 'relative' }} className="mb-4">
               <input type="text" placeholder="Cerca la razza..."
                 value={razzaQuery}
@@ -200,7 +185,7 @@ export default function Onboarding() {
                 onFocus={() => setShowDropdown(true)}
                 onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
                 className="w-full px-5 py-4 rounded-card text-base border-0 focus:outline-none focus:ring-2 placeholder-slate-gray"
-                style={{ backgroundColor: G.cream, color: G.ink }} />
+                style={{ backgroundColor: G.cream, color: G.ink, textAlign: 'center' }} />
 
               {showDropdown && (filtered.length > 0 || razzaQuery.length > 0) && (
                 <div style={{
@@ -237,14 +222,14 @@ export default function Onboarding() {
               value={dog.microchip}
               onChange={e => handleMicrochip(e.target.value)}
               className="w-full px-5 py-4 rounded-card text-base border-0 focus:outline-none focus:ring-2 placeholder-slate-gray mb-1"
-              style={{ backgroundColor: G.cream, color: G.ink }} />
+              style={{ backgroundColor: G.cream, color: G.ink, textAlign: 'center' }} />
             <p className="text-xs mb-auto" style={{ color: G.ink500 }}>
               15 cifre — lo trovi sul libretto sanitario
             </p>
 
             <button onClick={() => canNext1 && setStep(2)} disabled={!canNext1}
-              className="mt-6 w-full py-4 rounded-btn font-semibold text-base disabled:opacity-40 transition-colors"
-              style={{ backgroundColor: G.gold, color: '#FFFFFF' }}>
+              className="mt-6 w-full py-4 rounded-btn font-semibold text-base transition-colors"
+              style={{ backgroundColor: '#E8A859', color: '#FFFFFF', opacity: canNext1 ? 1 : 0.5 }}>
               Continua →
             </button>
           </>
@@ -254,7 +239,7 @@ export default function Onboarding() {
         {step === 2 && (
           <>
             <h1 className="text-2xl font-extrabold mb-1" style={{ color: G.ink }}>
-              Quanti anni ha {dog.nome}? 🎂
+              Quanti anni ha {dog.nome}?
             </h1>
             <p className="text-sm mb-5" style={{ color: G.ink500 }}>
               Ci aiuta a calcolare i reminder giusti.
@@ -273,11 +258,12 @@ export default function Onboarding() {
                 backgroundColor: G.cream,
                 color: dog.dataNascita ? G.ink : G.ink500,
                 WebkitAppearance: 'none',
+                textAlign: 'center',
               }} />
             <div className="mb-5" style={{ minHeight: 20 }}>
               {ageLabel && (
                 <p className="text-sm font-medium" style={{ color: G.gold }}>
-                  🎂 {dog.nome} ha {ageLabel}
+                  {dog.nome} ha {ageLabel}
                 </p>
               )}
             </div>
@@ -306,7 +292,7 @@ export default function Onboarding() {
               <input type="number" inputMode="decimal" placeholder="es. 28.5"
                 value={dog.peso} onChange={e => set('peso', e.target.value)}
                 className="w-full px-5 py-4 rounded-card text-base border-0 focus:outline-none focus:ring-2 placeholder-slate-gray pr-14"
-                style={{ backgroundColor: G.cream, color: G.ink }} />
+                style={{ backgroundColor: G.cream, color: G.ink, textAlign: 'center' }} />
               <span className="absolute right-5 top-1/2 -translate-y-1/2 text-sm font-semibold"
                 style={{ color: G.ink500 }}>kg</span>
             </div>
@@ -320,8 +306,8 @@ export default function Onboarding() {
 
             <button onClick={() => { setSaveError(''); dog.sesso && handleSave() }}
               disabled={!dog.sesso || saving}
-              className="mt-4 w-full py-4 rounded-btn font-semibold text-base disabled:opacity-40 flex items-center justify-center gap-2"
-              style={{ backgroundColor: G.gold, color: '#FFFFFF' }}>
+              className="mt-4 w-full py-4 rounded-btn font-semibold text-base flex items-center justify-center gap-2"
+              style={{ backgroundColor: '#E8A859', color: '#FFFFFF', opacity: (!dog.sesso || saving) ? 0.5 : 1 }}>
               {saving && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
               {saving ? 'Salvataggio…' : 'Salva →'}
             </button>
@@ -331,11 +317,37 @@ export default function Onboarding() {
         {/* ════════════════ STEP 3 ════════════════ */}
         {step === 3 && (
           <div className="flex flex-col items-center justify-center flex-1 text-center gap-5">
+            {/* Foto o placeholder con invito */}
             {dog.photoPreview
               ? <img src={dog.photoPreview} alt={dog.nome}
                   style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover',
                     border: `3px solid ${G.gold}` }} />
-              : <div className="text-7xl">🎉</div>
+              : (
+                <div className="flex flex-col items-center gap-3">
+                  <div style={{ width: 96, height: 96, borderRadius: '50%',
+                    backgroundColor: G.cream200, border: `2.5px dashed ${G.gold}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: 30, color: G.gold, fontWeight: 300 }}>+</span>
+                  </div>
+                  <p className="text-sm font-semibold" style={{ color: G.ink }}>
+                    Aggiungi un bel sorriso al profilo di {dog.nome}
+                  </p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => photoRef.current.click()}
+                      style={{ fontSize: 12, fontWeight: 600, padding: '6px 14px',
+                        borderRadius: 999, border: `1.5px solid ${G.cream200}`,
+                        backgroundColor: G.cream, color: G.ink500, cursor: 'pointer' }}>
+                      Galleria
+                    </button>
+                    <button onClick={() => cameraRef.current.click()}
+                      style={{ fontSize: 12, fontWeight: 600, padding: '6px 14px',
+                        borderRadius: 999, border: `1.5px solid ${G.gold}`,
+                        backgroundColor: G.gold, color: '#FFFFFF', cursor: 'pointer' }}>
+                      Scatta foto
+                    </button>
+                  </div>
+                </div>
+              )
             }
             <div>
               <h1 className="text-2xl font-extrabold mb-2" style={{ color: G.ink }}>

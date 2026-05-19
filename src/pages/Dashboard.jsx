@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, ChevronRight, Send, Lock, Syringe, MapPin, BookOpen, Dog, Camera, Bell, Shield, MessageCircle, LogOut } from 'lucide-react'
+import { Plus, ChevronRight, Send, Lock, Syringe, MapPin, BookOpen, Dog, Camera, Bell, Shield, MessageCircle, LogOut, Trash2 } from 'lucide-react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -95,7 +95,28 @@ function useDailyTip() {
 }
 
 function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, userName }) {
-  const scaduti = vaccini.filter(v => v.scaduto).length
+  const [listaVaccini, setListaVaccini] = useState(vaccini)
+  const [rinnovaTarget, setRinnovaTarget] = useState(null) // vaccino da rinnovare
+  const [nuovaData, setNuovaData]         = useState('')
+  const [rinnovaSaving, setRinnovaSaving] = useState(false)
+
+  const handleRinnova = () => {
+    if (!nuovaData) return
+    setRinnovaSaving(true)
+    setTimeout(() => {
+      setListaVaccini(prev => prev.map(v =>
+        v.nome === rinnovaTarget.nome
+          ? { ...v, data: new Date(nuovaData).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }),
+              scaduto: false, giorni: Math.round((new Date(nuovaData) - new Date()) / 86400000) }
+          : v
+      ))
+      setRinnovaTarget(null)
+      setNuovaData('')
+      setRinnovaSaving(false)
+    }, 400)
+  }
+
+  const scaduti = listaVaccini.filter(v => v.scaduto).length
   const { tip, loading: tipLoading } = useDailyTip()
 
   const now       = new Date()
@@ -187,7 +208,7 @@ function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, us
             <Plus size={11} /> Aggiungi
           </button>
         </div>
-        {vaccini.map((v) => (
+        {listaVaccini.map((v) => (
           <div key={v.nome}
             className="flex items-center justify-between px-4 py-3"
             style={{ borderTop: '1px solid #F6ECC8' }}>
@@ -195,13 +216,24 @@ function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, us
               <p className="text-sm font-semibold" style={{ color: '#2A2C2C' }}>{v.nome}</p>
               <p className="text-xs" style={{ color: '#A7A8A8' }}>{v.data}</p>
             </div>
-            <span className="text-xs font-bold px-2.5 py-1 rounded-pill"
-              style={{
-                backgroundColor: v.scaduto ? '#B77336' : v.giorni <= 60 ? '#F0B97A' : '#E8A859',
-                color: '#FFFFFF',
-              }}>
-              {v.scaduto ? 'Scaduto' : `${v.giorni} gg`}
-            </span>
+            <div className="flex items-center gap-2">
+              {v.scaduto && (
+                <button
+                  onClick={() => { setRinnovaTarget(v); setNuovaData('') }}
+                  style={{ fontSize: 11, fontWeight: 600, color: '#C1121F',
+                    textDecoration: 'underline', background: 'none', border: 'none',
+                    cursor: 'pointer', padding: 0 }}>
+                  Aggiorna
+                </button>
+              )}
+              <span className="text-xs font-bold px-2.5 py-1 rounded-pill"
+                style={{
+                  backgroundColor: v.scaduto ? '#B77336' : v.giorni <= 60 ? '#F0B97A' : '#E8A859',
+                  color: '#FFFFFF',
+                }}>
+                {v.scaduto ? 'Scaduto' : `${v.giorni} gg`}
+              </span>
+            </div>
           </div>
         ))}
 
@@ -235,6 +267,65 @@ function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, us
 
       </div>
 
+      {/* ── Modal Rinnova vaccino ── */}
+      {rinnovaTarget && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+        }}>
+          {/* Overlay */}
+          <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.4)' }}
+            onClick={() => setRinnovaTarget(null)} />
+
+          {/* Drawer */}
+          <div style={{
+            position: 'relative', backgroundColor: '#FFFFFF',
+            borderRadius: '20px 20px 0 0', padding: '24px 20px 36px',
+            boxShadow: '0 -4px 24px rgba(0,0,0,0.12)',
+          }}>
+            {/* Handle */}
+            <div style={{ width: 36, height: 4, borderRadius: 999,
+              backgroundColor: '#EFE0A8', margin: '0 auto 20px' }} />
+
+            <p style={{ fontSize: 16, fontWeight: 700, color: '#2A2C2C', marginBottom: 4 }}>
+              Aggiorna vaccino
+            </p>
+            <p style={{ fontSize: 13, color: '#6B6E6E', marginBottom: 20 }}>
+              {rinnovaTarget.nome}
+            </p>
+
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#6B6E6E',
+              display: 'block', marginBottom: 8 }}>
+              Nuova data di scadenza
+            </label>
+            <input type="date"
+              min={new Date().toISOString().split('T')[0]}
+              value={nuovaData}
+              onChange={e => setNuovaData(e.target.value)}
+              style={{
+                width: '100%', padding: '13px 16px', borderRadius: 12,
+                border: '1.5px solid #EFE0A8', backgroundColor: '#FBF6E2',
+                fontSize: 15, color: '#2A2C2C', outline: 'none',
+                marginBottom: 16, boxSizing: 'border-box',
+              }} />
+
+            <button onClick={handleRinnova} disabled={!nuovaData || rinnovaSaving}
+              style={{
+                width: '100%', padding: '14px', borderRadius: 999,
+                backgroundColor: '#E8A859', color: '#FFFFFF',
+                fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer',
+                opacity: !nuovaData || rinnovaSaving ? 0.5 : 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}>
+              {rinnovaSaving
+                ? <span style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)',
+                    borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block',
+                    animation: 'spin 0.7s linear infinite' }} />
+                : 'Salva rinnovo'}
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   )
@@ -655,190 +746,207 @@ function AIVetView({ isPremium }) {
 }
 
 // ─── Sezione Diario ─────────────────────────────────────────────────────────
+const VACCINI_SUGGERITI = ['Polivalente DHPP','Rabbia','Leishmaniosi','Leptospirosi','Tosse del canile','Parvovirosi']
+const ANTIPAR_TIPI      = ['Spot-on','Collare','Compressa','Spray']
+
 function LibrettoView({ dogName, dogId }) {
-  const [sezione, setSezione]     = useState('vaccini')
-  const [vaccini, setVaccini]     = useState([])
-  const [loading, setLoading]     = useState(false)
-  const [showForm, setShowForm]   = useState(false)
-  const [showFoto, setShowFoto]   = useState(false)
+  const [sezione, setSezione]   = useState('vaccini')
+  const [records, setRecords]   = useState([])
+  const [loading, setLoading]   = useState(false)
+  const [expanded, setExpanded] = useState(null)
+  const [swipedId, setSwipedId] = useState(null)
+  const [deleteId, setDeleteId] = useState(null)
+  const [showDrawer, setShowDrawer] = useState(false)
+  const [saving, setSaving]     = useState(false)
+  const [showFoto, setShowFoto] = useState(false)
   const [fotoPreview, setFotoPreview] = useState(null)
-  const [saving, setSaving]       = useState(false)
-  const fotoRef = useRef(null)
+  const fotoRef  = useRef(null)
+  const touchX   = useRef({})
 
-  const emptyForm = { nome: '', data: '', veterinario: '', lotto: '', prossima: '' }
-  const [form, setForm] = useState(emptyForm)
-  const setF = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  // ── Form vaccino ──
+  const emptyV = { nome:'', data:'', prossima:'', veterinario:'', note:'', nomeQ:'' }
+  const [vForm, setVForm]         = useState(emptyV)
+  const [showNomeDrop, setShowNomeDrop] = useState(false)
+  const setV = (k,v) => setVForm(f=>({...f,[k]:v}))
 
-  // Carica vaccini da Supabase
+  // ── Form antipar ──
+  const emptyA = { tipo:'', tipoQ:'', prodotto:'', data:'', prossima:'', note:'' }
+  const [aForm, setAForm]         = useState(emptyA)
+  const [showTipoDrop, setShowTipoDrop] = useState(false)
+  const setA = (k,v) => setAForm(f=>({...f,[k]:v}))
+
+  const formatDate = (iso) => {
+    if (!iso) return ''
+    return new Date(iso).toLocaleDateString('it-IT',{day:'2-digit',month:'short',year:'numeric'})
+  }
+
+  const getBadge = (nextDate) => {
+    if (!nextDate) return null
+    const days = Math.round((new Date(nextDate) - new Date()) / 86400000)
+    if (days < 0)   return { label:'Scaduto',      color:'#C1121F', bg:'#FDECEA' }
+    if (days <= 30) return { label:'In scadenza',  color:'#B77336', bg:'#FFF3CD' }
+    return               { label:'In regola',    color:'#2E7D52', bg:'#F0FBF4' }
+  }
+
+  const calcNextAntipar = (tipo, data) => {
+    if (!data) return ''
+    const d = new Date(data)
+    if (tipo === 'Collare') d.setMonth(d.getMonth() + 3)
+    else d.setDate(d.getDate() + 30)
+    return d.toISOString().split('T')[0]
+  }
+
+  // ── Carica ──
   useEffect(() => {
     if (!dogId) return
     setLoading(true)
-    supabase.from('vaccines').select('*').eq('dog_id', dogId).order('date', { ascending: false })
-      .then(({ data }) => { setVaccini(data || []); setLoading(false) })
-  }, [dogId])
+    const type = sezione === 'vaccini' ? 'vaccine' : 'antiparassitario'
+    supabase.from('vaccines').select('*')
+      .eq('dog_id', dogId).eq('type', type)
+      .order('date', { ascending: false })
+      .then(({ data }) => { setRecords(data || []); setLoading(false) })
+  }, [dogId, sezione])
 
+  // ── Salva vaccino ──
   const handleSaveVaccino = async () => {
-    if (!form.nome || !form.data || !dogId) return
+    if (!vForm.nome || !vForm.data || !dogId) return
     setSaving(true)
     const { data, error } = await supabase.from('vaccines').insert({
-      dog_id:       dogId,
-      name:         form.nome,
-      date:         form.data,
-      next_date:    form.prossima || null,
-      reminder_days: 30,
+      dog_id: dogId, name: vForm.nome, date: vForm.data,
+      next_date: vForm.prossima || null, type: 'vaccine',
+      veterinario: vForm.veterinario || null,
+      notes: vForm.note || null, reminder_days: 30,
     }).select().single()
-    if (!error && data) {
-      setVaccini(v => [data, ...v])
-      setForm(emptyForm)
-      setShowForm(false)
-    }
+    if (!error && data) { setRecords(r => [data,...r]); setVForm(emptyV); setShowDrawer(false) }
     setSaving(false)
   }
 
-  const handleFoto = (e) => {
+  // ── Salva antipar ──
+  const handleSaveAntipar = async () => {
+    if (!aForm.tipo || !aForm.data || !dogId) return
+    setSaving(true)
+    const next = aForm.prossima || calcNextAntipar(aForm.tipo, aForm.data)
+    const { data, error } = await supabase.from('vaccines').insert({
+      dog_id: dogId, name: aForm.prodotto || aForm.tipo, date: aForm.data,
+      next_date: next || null, type: 'antiparassitario',
+      notes: [aForm.tipo, aForm.note].filter(Boolean).join(' · '),
+      reminder_days: 30,
+    }).select().single()
+    if (!error && data) { setRecords(r => [data,...r]); setAForm(emptyA); setShowDrawer(false) }
+    setSaving(false)
+  }
+
+  // ── Elimina ──
+  const handleDelete = async (id) => {
+    await supabase.from('vaccines').delete().eq('id', id)
+    setRecords(r => r.filter(v => v.id !== id))
+    setDeleteId(null); setSwipedId(null)
+  }
+
+  // ── Swipe ──
+  const onTouchStart = (e, id) => { touchX.current[id] = e.touches[0].clientX }
+  const onTouchEnd   = (e, id) => {
+    const diff = (touchX.current[id] || 0) - e.changedTouches[0].clientX
+    if (diff > 60) setSwipedId(id)
+    else if (diff < -20) setSwipedId(null)
+  }
+
+  // ── Foto libretto ──
+  const handleFotoCapture = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
     reader.onload = ev => setFotoPreview(ev.target.result)
     reader.readAsDataURL(file)
+    if (dogId) {
+      const ext  = file.name.split('.').pop()
+      const path = `${dogId}/${Date.now()}.${ext}`
+      supabase.storage.from('libretto-photos').upload(path, file, { upsert: false })
+    }
   }
 
-  const formatDate = (iso) => {
-    if (!iso) return ''
-    const d = new Date(iso)
-    return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })
-  }
+  const nomeFiltrati  = vForm.nomeQ ? VACCINI_SUGGERITI.filter(s => s.toLowerCase().includes(vForm.nomeQ.toLowerCase())) : VACCINI_SUGGERITI
+  const tipoFiltrati  = aForm.tipoQ ? ANTIPAR_TIPI.filter(s => s.toLowerCase().includes(aForm.tipoQ.toLowerCase())) : ANTIPAR_TIPI
+
+  const FieldLabel = ({ text, optional }) => (
+    <p className="text-xs font-semibold mb-1.5" style={{ color:'#6B6E6E' }}>
+      {text}{optional && <span style={{ fontWeight:400, color:'#A7A8A8' }}> (opzionale)</span>}
+    </p>
+  )
+  const FieldInput = ({ type='text', placeholder, value, onChange, max }) => (
+    <input type={type} placeholder={placeholder} value={value} onChange={onChange} max={max}
+      className="w-full px-4 py-3 rounded-[12px] text-sm border-0 outline-none mb-3"
+      style={{ backgroundColor:'#FBF6E2', color:'#2A2C2C' }} />
+  )
 
   return (
     <div className="flex flex-col gap-4 pb-4">
 
-      {/* Tabs interni */}
+      {/* Tabs */}
       <div className="flex gap-2">
-        {[
-          { id: 'vaccini', label: 'Vaccini' },
-          { id: 'antipar', label: 'Antiparassitari' },
-        ].map(t => (
-          <button key={t.id} onClick={() => setSezione(t.id)}
+        {[{id:'vaccini',label:'Vaccini'},{id:'antipar',label:'Antiparassitari'}].map(t => (
+          <button key={t.id} onClick={() => { setSezione(t.id); setShowDrawer(false) }}
             className="flex-1 py-2 text-xs font-bold transition-colors"
-            style={{
-              borderRadius: 14,
-              backgroundColor: sezione === t.id ? '#E8A859' : '#FFFFFF',
-              color: sezione === t.id ? '#FFFFFF' : '#E8A859',
-              boxShadow: sezione === t.id ? 'none' : 'var(--shadow-soft)',
-            }}>
+            style={{ borderRadius:14,
+              backgroundColor: sezione===t.id ? '#E8A859':'#FFFFFF',
+              color: sezione===t.id ? '#FFFFFF':'#E8A859',
+              boxShadow: sezione===t.id ? 'none':'var(--shadow-soft)' }}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* Pulsanti azione */}
-      {sezione === 'vaccini' && (
-        <div className="flex gap-2">
-          <button
-            onClick={() => { setShowForm(true); setShowFoto(false) }}
+      {/* Azioni */}
+      <div className="flex gap-2">
+        <button onClick={() => { setShowDrawer(true); setShowFoto(false) }}
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-card text-sm font-bold"
+          style={{ border:'1.5px dashed #E8A859', color:'#E8A859', backgroundColor:'transparent' }}>
+          <Plus size={15} /> Aggiungi
+        </button>
+        {sezione === 'vaccini' && (
+          <button onClick={() => { setShowFoto(true); setShowDrawer(false) }}
             className="flex-1 flex items-center justify-center gap-2 py-3 rounded-card text-sm font-bold"
-            style={{ border: '1.5px dashed #E8A859', color: '#E8A859', backgroundColor: 'transparent' }}>
-            <Plus size={15} /> Aggiungi
-          </button>
-          <button
-            onClick={() => { setShowFoto(true); setShowForm(false) }}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-card text-sm font-bold"
-            style={{ border: '1.5px dashed #B77336', color: '#B77336', backgroundColor: 'transparent' }}>
+            style={{ border:'1.5px dashed #B77336', color:'#B77336', backgroundColor:'transparent' }}>
             <Camera size={15} /> Scatta foto
           </button>
-        </div>
-      )}
-      {sezione === 'antipar' && (
-        <button className="flex items-center justify-center gap-2 w-full py-3 rounded-card text-sm font-bold"
-          style={{ border: '1.5px dashed #E8A859', color: '#E8A859', backgroundColor: 'transparent' }}>
-          <Plus size={15} /> Aggiungi trattamento
-        </button>
-      )}
+        )}
+      </div>
 
-      {/* Form aggiungi vaccino */}
-      {showForm && sezione === 'vaccini' && (
-        <div className="rounded-[18px] overflow-hidden"
-          style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
-          <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-            <p className="text-sm font-bold" style={{ color: '#2A2C2C' }}>Nuova vaccinazione</p>
-            <button onClick={() => { setShowForm(false); setForm(emptyForm) }}
-              style={{ color: '#A7A8A8', fontSize: 18, lineHeight: 1 }}>✕</button>
-          </div>
-          <div className="px-4 pb-4 flex flex-col gap-3">
-            {[
-              { key: 'nome',        label: 'Nome vaccino *',     type: 'text',  placeholder: 'es. Polivalente DHPP' },
-              { key: 'data',        label: 'Data somministrazione *', type: 'date', placeholder: '' },
-              { key: 'veterinario', label: 'Veterinario',        type: 'text',  placeholder: 'es. Dr. Rossi' },
-              { key: 'lotto',       label: 'Numero lotto',       type: 'text',  placeholder: 'es. A4521X' },
-              { key: 'prossima',    label: 'Prossimo richiamo',  type: 'date',  placeholder: '' },
-            ].map(({ key, label, type, placeholder }) => (
-              <div key={key}>
-                <p className="text-xs font-semibold mb-1" style={{ color: '#6B6E6E' }}>{label}</p>
-                <input
-                  type={type}
-                  placeholder={placeholder}
-                  value={form[key]}
-                  onChange={e => setF(key, e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-[12px] text-sm border-0 outline-none"
-                  style={{ backgroundColor: '#F6ECC8', color: '#2A2C2C' }}
-                />
-              </div>
-            ))}
-            <button
-              onClick={handleSaveVaccino}
-              disabled={!form.nome || !form.data || saving}
-              className="w-full py-3 rounded-pill text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2 mt-1"
-              style={{ backgroundColor: '#E8A859', color: '#FFFFFF' }}>
-              {saving && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-              {saving ? 'Salvataggio…' : 'Salva vaccino'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Feature foto libretto */}
+      {/* Foto libretto */}
       {showFoto && sezione === 'vaccini' && (
         <div className="rounded-[18px] overflow-hidden"
-          style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
+          style={{ backgroundColor:'#FFFFFF', boxShadow:'var(--shadow-soft)' }}>
           <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-            <p className="text-sm font-bold" style={{ color: '#2A2C2C' }}>Fotografa il libretto</p>
+            <p className="text-sm font-bold" style={{ color:'#2A2C2C' }}>Fotografa il libretto</p>
             <button onClick={() => { setShowFoto(false); setFotoPreview(null) }}
-              style={{ color: '#A7A8A8', fontSize: 18, lineHeight: 1 }}>✕</button>
+              style={{ color:'#A7A8A8', fontSize:18, lineHeight:1, background:'none', border:'none', cursor:'pointer' }}>✕</button>
           </div>
           <div className="px-4 pb-4 flex flex-col gap-3">
             {!fotoPreview ? (
               <>
-                <p className="text-xs" style={{ color: '#6B6E6E', lineHeight: 1.5 }}>
-                  Scatta una foto al tuo libretto cartaceo — analizzeremo automaticamente i vaccini registrati.
+                <p className="text-xs" style={{ color:'#6B6E6E', lineHeight:1.5 }}>
+                  Scatta una foto al libretto cartaceo — i vaccini saranno riconosciuti automaticamente.
                 </p>
-                <button
-                  onClick={() => fotoRef.current?.click()}
-                  className="w-full py-10 rounded-[14px] flex flex-col items-center gap-2 transition-opacity active:opacity-70"
-                  style={{ border: '2px dashed #EFE0A8', backgroundColor: '#FBF6E2' }}>
-                  <Camera size={28} style={{ color: '#B77336' }} />
-                  <span className="text-sm font-semibold" style={{ color: '#B77336' }}>
-                    Tocca per scattare
-                  </span>
-                  <span className="text-xs" style={{ color: '#A7A8A8' }}>o scegli dalla galleria</span>
+                <button onClick={() => fotoRef.current?.click()}
+                  className="w-full py-10 rounded-[14px] flex flex-col items-center gap-2 active:opacity-70"
+                  style={{ border:'2px dashed #EFE0A8', backgroundColor:'#FBF6E2', cursor:'pointer' }}>
+                  <Camera size={28} style={{ color:'#B77336' }} />
+                  <span className="text-sm font-semibold" style={{ color:'#B77336' }}>Tocca per scattare</span>
+                  <span className="text-xs" style={{ color:'#A7A8A8' }}>o scegli dalla galleria</span>
                 </button>
                 <input ref={fotoRef} type="file" accept="image/*" capture="environment"
-                  className="hidden" onChange={handleFoto} />
+                  className="hidden" onChange={handleFotoCapture} />
               </>
             ) : (
               <>
-                <img src={fotoPreview} alt="libretto"
-                  className="w-full rounded-[12px] object-cover" style={{ maxHeight: 220 }} />
-                <div className="rounded-[12px] px-3 py-2.5 flex items-center gap-2"
-                  style={{ backgroundColor: '#F0FBF4' }}>
-                  <span style={{ fontSize: 16 }}>✅</span>
-                  <p className="text-xs font-semibold" style={{ color: '#2E7D52', lineHeight: 1.4 }}>
-                    Foto ricevuta! Il riconoscimento automatico dei vaccini sarà disponibile a breve.
+                <img src={fotoPreview} alt="libretto" className="w-full rounded-[12px] object-cover" style={{ maxHeight:220 }} />
+                <div className="rounded-[12px] px-3 py-2.5" style={{ backgroundColor:'#F0FBF4' }}>
+                  <p className="text-xs font-semibold" style={{ color:'#2E7D52', lineHeight:1.4 }}>
+                    Foto salvata! Il riconoscimento automatico sarà disponibile a breve.
                   </p>
                 </div>
-                <button
-                  onClick={() => setFotoPreview(null)}
-                  className="text-xs font-semibold text-center"
-                  style={{ color: '#A7A8A8' }}>
+                <button onClick={() => setFotoPreview(null)} className="text-xs font-semibold text-center"
+                  style={{ color:'#A7A8A8', background:'none', border:'none', cursor:'pointer' }}>
                   Scatta un'altra foto
                 </button>
               </>
@@ -847,71 +955,272 @@ function LibrettoView({ dogName, dogId }) {
         </div>
       )}
 
-      {/* Lista vaccini */}
-      {sezione === 'vaccini' && (
-        <div className="rounded-card overflow-hidden"
-          style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
-          {loading ? (
-            <div className="px-4 py-6 flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
-                style={{ borderColor: '#E8A859', borderTopColor: 'transparent' }} />
-              <p className="text-sm" style={{ color: '#A7A8A8' }}>Carico vaccini…</p>
+      {/* Lista */}
+      <div className="rounded-card overflow-hidden" style={{ backgroundColor:'#FFFFFF', boxShadow:'var(--shadow-soft)' }}>
+        {loading ? (
+          <div className="px-4 py-6 flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
+              style={{ borderColor:'#E8A859', borderTopColor:'transparent' }} />
+            <p className="text-sm" style={{ color:'#A7A8A8' }}>Carico…</p>
+          </div>
+        ) : records.length === 0 ? (
+          <div className="px-4 py-8 text-center">
+            <p className="text-sm" style={{ color:'#A7A8A8' }}>
+              {sezione === 'vaccini' ? 'Nessun vaccino registrato' : 'Nessun trattamento registrato'}
+            </p>
+            <p className="text-xs mt-1" style={{ color:'#C0C0C0' }}>Tocca + Aggiungi per iniziare</p>
+          </div>
+        ) : records.map((v, i) => {
+          const badge    = getBadge(v.next_date)
+          const isOpen   = expanded === v.id
+          const isSwiped = swipedId === v.id
+          return (
+            <div key={v.id} style={{ position:'relative', overflow:'hidden',
+              borderBottom: i < records.length-1 ? '1px solid #F6ECC8' : 'none' }}>
+
+              {/* Swipe delete bg */}
+              <div style={{ position:'absolute', right:0, top:0, bottom:0, width:80,
+                backgroundColor:'#C1121F', display:'flex', alignItems:'center', justifyContent:'center',
+                cursor:'pointer' }}
+                onClick={() => setDeleteId(v.id)}>
+                <Trash2 size={18} style={{ color:'#FFFFFF' }} />
+              </div>
+
+              {/* Card row */}
+              <div
+                onTouchStart={e => onTouchStart(e, v.id)}
+                onTouchEnd={e => onTouchEnd(e, v.id)}
+                onClick={() => { setExpanded(isOpen ? null : v.id); setSwipedId(null) }}
+                style={{ position:'relative', backgroundColor:'#FFFFFF',
+                  transform: isSwiped ? 'translateX(-80px)' : 'translateX(0)',
+                  transition:'transform 0.25s ease', cursor:'pointer', padding:'14px 16px' }}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold truncate" style={{ color:'#2A2C2C' }}>{v.name}</p>
+                    <p className="text-xs mt-0.5" style={{ color:'#A7A8A8' }}>{formatDate(v.date)}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {badge && (
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-pill"
+                        style={{ backgroundColor:badge.bg, color:badge.color }}>
+                        {badge.label}
+                      </span>
+                    )}
+                    <ChevronRight size={14} style={{ color:'#A7A8A8',
+                      transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                      transition:'transform 0.2s' }} />
+                  </div>
+                </div>
+
+                {/* Dettagli espansi */}
+                {isOpen && (
+                  <div className="mt-3 pt-3 flex flex-col gap-1.5"
+                    style={{ borderTop:'1px solid #F6ECC8' }}>
+                    {v.next_date && (
+                      <p className="text-xs" style={{ color:'#6B6E6E' }}>
+                        Prossima dose: <span style={{ color:'#2A2C2C', fontWeight:600 }}>{formatDate(v.next_date)}</span>
+                      </p>
+                    )}
+                    {v.veterinario && (
+                      <p className="text-xs" style={{ color:'#6B6E6E' }}>
+                        Veterinario: <span style={{ color:'#2A2C2C', fontWeight:600 }}>{v.veterinario}</span>
+                      </p>
+                    )}
+                    {v.notes && (
+                      <p className="text-xs" style={{ color:'#6B6E6E' }}>
+                        Note: <span style={{ color:'#2A2C2C' }}>{v.notes}</span>
+                      </p>
+                    )}
+                    <button onClick={e => { e.stopPropagation(); setDeleteId(v.id) }}
+                      className="text-xs font-semibold mt-1 text-left"
+                      style={{ color:'#C1121F', background:'none', border:'none', cursor:'pointer' }}>
+                      Elimina
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          ) : vaccini.length === 0 ? (
-            <div className="px-4 py-6 text-center">
-              <p className="text-sm" style={{ color: '#A7A8A8' }}>Nessun vaccino registrato</p>
-              <p className="text-xs mt-1" style={{ color: '#C0C0C0' }}>Aggiungi il primo o scatta una foto al libretto</p>
+          )
+        })}
+      </div>
+
+      {/* Dialog conferma elimina */}
+      {deleteId && (
+        <div style={{ position:'fixed', inset:0, zIndex:300,
+          display:'flex', alignItems:'center', justifyContent:'center',
+          backgroundColor:'rgba(0,0,0,0.4)' }}>
+          <div style={{ backgroundColor:'#FFFFFF', borderRadius:20, padding:'24px 20px',
+            width:'80%', maxWidth:320, textAlign:'center' }}>
+            <p className="text-sm font-bold mb-2" style={{ color:'#2A2C2C' }}>Eliminare questo record?</p>
+            <p className="text-xs mb-5" style={{ color:'#6B6E6E' }}>L'operazione non è reversibile.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteId(null)}
+                className="flex-1 py-3 rounded-pill text-sm font-semibold"
+                style={{ backgroundColor:'#F6ECC8', color:'#2A2C2C', border:'none', cursor:'pointer' }}>
+                Annulla
+              </button>
+              <button onClick={() => handleDelete(deleteId)}
+                className="flex-1 py-3 rounded-pill text-sm font-semibold"
+                style={{ backgroundColor:'#C1121F', color:'#FFFFFF', border:'none', cursor:'pointer' }}>
+                Elimina
+              </button>
             </div>
-          ) : vaccini.map((v, i) => (
-            <div key={v.id} className="px-4 py-3.5"
-              style={{ borderBottom: i < vaccini.length - 1 ? '1px solid #F6ECC8' : 'none' }}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <p className="text-sm font-bold" style={{ color: '#2A2C2C' }}>{v.name}</p>
-                  {v.notes && <p className="text-xs mt-0.5" style={{ color: '#6B6E6E' }}>{v.notes}</p>}
-                  {v.next_date && (
-                    <p className="text-xs mt-0.5" style={{ color: '#A7A8A8' }}>
-                      Prossima: {formatDate(v.next_date)}
-                    </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Drawer Aggiungi ── */}
+      {showDrawer && (
+        <div style={{ position:'fixed', inset:0, zIndex:200,
+          display:'flex', flexDirection:'column', justifyContent:'flex-end' }}>
+          <div style={{ position:'absolute', inset:0, backgroundColor:'rgba(0,0,0,0.4)' }}
+            onClick={() => setShowDrawer(false)} />
+          <div style={{ position:'relative', backgroundColor:'#FFFFFF',
+            borderRadius:'20px 20px 0 0', padding:'20px 20px 40px',
+            maxHeight:'85vh', overflowY:'auto' }}>
+            {/* Handle */}
+            <div style={{ width:36, height:4, borderRadius:999, backgroundColor:'#EFE0A8',
+              margin:'0 auto 16px' }} />
+
+            <p className="text-base font-bold mb-4" style={{ color:'#2A2C2C' }}>
+              {sezione === 'vaccini' ? 'Nuova vaccinazione' : 'Nuovo trattamento'}
+            </p>
+
+            {/* ── FORM VACCINO ── */}
+            {sezione === 'vaccini' && (
+              <>
+                <FieldLabel text="Nome vaccino" />
+                <div style={{ position:'relative', marginBottom:12 }}>
+                  <input type="text" placeholder="es. Polivalente DHPP"
+                    value={vForm.nomeQ}
+                    onChange={e => { setV('nomeQ', e.target.value); setV('nome', e.target.value); setShowNomeDrop(true) }}
+                    onFocus={() => setShowNomeDrop(true)}
+                    onBlur={() => setTimeout(() => setShowNomeDrop(false), 150)}
+                    className="w-full px-4 py-3 rounded-[12px] text-sm border-0 outline-none"
+                    style={{ backgroundColor:'#FBF6E2', color:'#2A2C2C' }} />
+                  {showNomeDrop && nomeFiltrati.length > 0 && (
+                    <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:10,
+                      backgroundColor:'#FFFFFF', borderRadius:12,
+                      boxShadow:'0 4px 20px rgba(0,0,0,0.12)', overflow:'hidden' }}>
+                      {nomeFiltrati.map(s => (
+                        <button key={s} onMouseDown={() => { setV('nome', s); setV('nomeQ', s); setShowNomeDrop(false) }}
+                          className="w-full text-left px-4 py-3 text-sm"
+                          style={{ color:'#2A2C2C', borderBottom:'1px solid #F6ECC8',
+                            background:'none', cursor:'pointer' }}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
-                <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-pill mt-0.5"
-                  style={{ backgroundColor: '#F6ECC8', color: '#B77336' }}>
-                  {formatDate(v.date)}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
 
-      {/* Lista antiparassitari */}
-      {sezione === 'antipar' && (
-        <div className="rounded-card overflow-hidden"
-          style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
-          {storicoAntipar.map((v, i) => (
-            <div key={i} className="px-4 py-3.5"
-              style={{ borderBottom: i < storicoAntipar.length - 1 ? '1px solid #F6ECC8' : 'none' }}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1">
-                  <p className="text-sm font-bold" style={{ color: '#2A2C2C' }}>{v.prodotto}</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#6B6E6E' }}>{v.tipo}</p>
-                  {v.note && <p className="text-xs mt-0.5" style={{ color: '#A7A8A8' }}>{v.note}</p>}
+                <FieldLabel text="Data somministrazione" />
+                <FieldInput type="date" value={vForm.data}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={e => setV('data', e.target.value)} />
+
+                <FieldLabel text="Prossima dose" optional />
+                <FieldInput type="date" value={vForm.prossima}
+                  onChange={e => setV('prossima', e.target.value)} />
+
+                <FieldLabel text="Veterinario" optional />
+                <FieldInput placeholder="es. Dr. Rossi" value={vForm.veterinario}
+                  onChange={e => setV('veterinario', e.target.value)} />
+
+                <FieldLabel text="Note" optional />
+                <textarea placeholder="Note aggiuntive…"
+                  value={vForm.note} onChange={e => setV('note', e.target.value)}
+                  className="w-full px-4 py-3 rounded-[12px] text-sm border-0 outline-none resize-none mb-4"
+                  style={{ backgroundColor:'#FBF6E2', color:'#2A2C2C', minHeight:72 }} />
+
+                <button onClick={handleSaveVaccino}
+                  disabled={!vForm.nome || !vForm.data || saving}
+                  className="w-full py-4 rounded-pill text-sm font-bold flex items-center justify-center gap-2"
+                  style={{ backgroundColor:'#E8A859', color:'#FFFFFF', border:'none', cursor:'pointer',
+                    opacity: !vForm.nome || !vForm.data || saving ? 0.5 : 1 }}>
+                  {saving && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                  {saving ? 'Salvataggio…' : 'Salva vaccino'}
+                </button>
+              </>
+            )}
+
+            {/* ── FORM ANTIPAR ── */}
+            {sezione === 'antipar' && (
+              <>
+                <FieldLabel text="Tipo trattamento" />
+                <div style={{ position:'relative', marginBottom:12 }}>
+                  <input type="text" placeholder="es. Spot-on"
+                    value={aForm.tipoQ}
+                    onChange={e => { setA('tipoQ', e.target.value); setA('tipo', e.target.value); setShowTipoDrop(true) }}
+                    onFocus={() => setShowTipoDrop(true)}
+                    onBlur={() => setTimeout(() => setShowTipoDrop(false), 150)}
+                    className="w-full px-4 py-3 rounded-[12px] text-sm border-0 outline-none"
+                    style={{ backgroundColor:'#FBF6E2', color:'#2A2C2C' }} />
+                  {showTipoDrop && tipoFiltrati.length > 0 && (
+                    <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, zIndex:10,
+                      backgroundColor:'#FFFFFF', borderRadius:12,
+                      boxShadow:'0 4px 20px rgba(0,0,0,0.12)', overflow:'hidden' }}>
+                      {tipoFiltrati.map(s => (
+                        <button key={s} onMouseDown={() => {
+                          setA('tipo', s); setA('tipoQ', s)
+                          setA('prossima', calcNextAntipar(s, aForm.data))
+                          setShowTipoDrop(false)
+                        }}
+                          className="w-full text-left px-4 py-3 text-sm"
+                          style={{ color:'#2A2C2C', borderBottom:'1px solid #F6ECC8',
+                            background:'none', cursor:'pointer' }}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <span className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-pill mt-0.5"
-                  style={{ backgroundColor: '#F6ECC8', color: '#B77336' }}>
-                  {v.data}
-                </span>
-              </div>
-            </div>
-          ))}
+
+                <FieldLabel text="Prodotto usato" optional />
+                <FieldInput placeholder="es. Frontline Combo" value={aForm.prodotto}
+                  onChange={e => setA('prodotto', e.target.value)} />
+
+                <FieldLabel text="Data trattamento" />
+                <FieldInput type="date" value={aForm.data}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={e => {
+                    setA('data', e.target.value)
+                    if (aForm.tipo) setA('prossima', calcNextAntipar(aForm.tipo, e.target.value))
+                  }} />
+
+                <FieldLabel text="Prossimo trattamento" optional />
+                {aForm.tipo && aForm.data && (
+                  <p className="text-xs mb-1" style={{ color:'#B77336' }}>
+                    Calcolato automaticamente: {formatDate(calcNextAntipar(aForm.tipo, aForm.data))}
+                  </p>
+                )}
+                <FieldInput type="date" value={aForm.prossima}
+                  onChange={e => setA('prossima', e.target.value)} />
+
+                <FieldLabel text="Note" optional />
+                <textarea placeholder="Note aggiuntive…"
+                  value={aForm.note} onChange={e => setA('note', e.target.value)}
+                  className="w-full px-4 py-3 rounded-[12px] text-sm border-0 outline-none resize-none mb-4"
+                  style={{ backgroundColor:'#FBF6E2', color:'#2A2C2C', minHeight:72 }} />
+
+                <button onClick={handleSaveAntipar}
+                  disabled={!aForm.tipo || !aForm.data || saving}
+                  className="w-full py-4 rounded-pill text-sm font-bold flex items-center justify-center gap-2"
+                  style={{ backgroundColor:'#E8A859', color:'#FFFFFF', border:'none', cursor:'pointer',
+                    opacity: !aForm.tipo || !aForm.data || saving ? 0.5 : 1 }}>
+                  {saving && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                  {saving ? 'Salvataggio…' : 'Salva trattamento'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
-
 
     </div>
   )
 }
+
 
 // ─── Sezione Profilo ────────────────────────────────────────────────────────
 function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeError,

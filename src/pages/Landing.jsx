@@ -134,12 +134,16 @@ function Hero() {
         {/* Logo + wordmark centrati */}
         <FadeIn delay={40}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24, gap: 10 }}>
+
             <img src="/bertie-logo.svg" alt="Bertie logo"
               style={{ width: 160, height: 160, objectFit: 'contain' }} />
+
             <img src="/bertie-wordmark.svg" alt="Bertie"
               style={{ height: 60, objectFit: 'contain' }} />
           </div>
         </FadeIn>
+
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
 
         {/* Headline */}
         <FadeIn delay={80}>
@@ -231,7 +235,6 @@ function Hero() {
         </FadeIn>
 
       </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </section>
   )
 }
