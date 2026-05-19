@@ -65,12 +65,8 @@ function Navbar() {
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px',
         height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
-        {/* Logo */}
-        <span style={{ fontFamily: 'var(--font-display)', fontSize: 26, cursor: 'pointer' }}
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-          <span style={{ color: C.bowtie }}>Ber</span>
-          <em style={{ color: C.gold, fontStyle: 'italic' }}>tie</em>
-        </span>
+        {/* Logo placeholder — vuoto */}
+        <div />
 
         {/* Links desktop */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
@@ -104,7 +100,36 @@ function Navbar() {
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero() {
-  const navigate = useNavigate()
+  const [email, setEmail]   = useState('')
+  const [status, setStatus] = useState('idle') // idle | loading | success | duplicate | error
+  const [msg, setMsg]       = useState('')
+
+  const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!isValidEmail(email)) {
+      setMsg('Inserisci un indirizzo email valido.')
+      setStatus('error')
+      return
+    }
+    setStatus('loading')
+    const { error } = await supabase.from('waitlist').insert({ email: email.trim().toLowerCase() })
+    if (error) {
+      if (error.code === '23505') {
+        setMsg('Sei già in lista! Ti contatteremo presto.')
+        setStatus('duplicate')
+      } else {
+        setMsg('Qualcosa è andato storto. Riprova tra poco.')
+        setStatus('error')
+      }
+    } else {
+      setMsg('Perfetto! Ti avviseremo non appena Bertie sarà disponibile. 🎉')
+      setStatus('success')
+      setEmail('')
+    }
+  }
+
   return (
     <section style={{
       minHeight: '100svh', backgroundColor: C.biscuit,
@@ -113,16 +138,16 @@ function Hero() {
         radial-gradient(400px 300px at 10% 80%, rgba(183,115,54,0.10), transparent 60%)
       `,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '100px 24px 64px',
+      padding: '80px 24px 48px',
     }}>
-      <div style={{ maxWidth: 680, width: '100%', textAlign: 'center' }}>
+      <div style={{ maxWidth: 560, width: '100%', textAlign: 'center' }}>
 
         {/* Eyebrow */}
         <FadeIn>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
-            letterSpacing: '0.14em', color: C.honey, marginBottom: 24,
+            letterSpacing: '0.14em', color: C.honey, marginBottom: 20,
           }}>
             <span style={{ width: 14, height: 1, backgroundColor: C.honey, display: 'inline-block' }} />
             L'app per chi ama davvero il proprio cane
@@ -130,66 +155,108 @@ function Hero() {
           </div>
         </FadeIn>
 
+        {/* Logo + wordmark centrati */}
+        <FadeIn delay={40}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24, gap: 10 }}>
+            <img src="/bertie-logo.svg" alt="Bertie logo"
+              style={{ width: 160, height: 160, objectFit: 'contain' }} />
+            <img src="/bertie-wordmark.svg" alt="Bertie"
+              style={{ height: 60, objectFit: 'contain' }} />
+          </div>
+        </FadeIn>
+
         {/* Headline */}
         <FadeIn delay={80}>
           <h1 style={{
             fontFamily: 'var(--font-display)', fontWeight: 400,
-            fontSize: 'clamp(36px, 7vw, 64px)', lineHeight: 1.05,
-            letterSpacing: '-0.025em', color: C.bowtie, margin: '0 0 20px',
+            fontSize: 'clamp(26px, 5vw, 44px)', lineHeight: 1.1,
+            letterSpacing: '-0.025em', color: C.bowtie, margin: '0 0 16px',
           }}>
-            Tutta la vita del tuo cane,{' '}
+            Tutta la vita del tuo cane,<br />
             <em style={{ fontStyle: 'italic', color: C.gold }}>in un posto solo.</em>
           </h1>
         </FadeIn>
 
         {/* Sottotitolo */}
-        <FadeIn delay={160}>
+        <FadeIn delay={140}>
           <p style={{
-            fontSize: 17, lineHeight: 1.65, color: C.muted,
-            maxWidth: 520, margin: '0 auto 36px',
+            fontSize: 16, lineHeight: 1.65, color: C.muted,
+            maxWidth: 440, margin: '0 auto 28px',
           }}>
             Vaccini, antiparassitari, mappa dog-friendly e molto altro.
             In italiano, fatto per chi ama davvero il proprio cane.
           </p>
         </FadeIn>
 
-        {/* CTAs */}
-        <FadeIn delay={240}>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={() => navigate('/registrati')}
-              style={{
-                fontSize: 15, fontWeight: 600, color: C.white,
-                backgroundColor: C.gold, border: 'none', borderRadius: 999,
-                padding: '14px 32px', cursor: 'pointer', transition: 'background-color 0.2s',
-                boxShadow: '0 8px 24px -6px rgba(232,168,89,0.55)',
-              }}
-              onMouseOver={e => e.currentTarget.style.backgroundColor = C.honey}
-              onMouseOut={e => e.currentTarget.style.backgroundColor = C.gold}>
-              Inizia gratis →
-            </button>
-            <a href="#features"
-              style={{
-                fontSize: 15, fontWeight: 500, color: C.bowtie,
-                backgroundColor: 'transparent',
-                border: `1.5px solid ${C.bowtie}`,
-                borderRadius: 999, padding: '13px 28px',
-                cursor: 'pointer', textDecoration: 'none', transition: 'opacity 0.2s',
-              }}
-              onMouseOver={e => e.currentTarget.style.opacity = '0.65'}
-              onMouseOut={e => e.currentTarget.style.opacity = '1'}>
-              Scopri come funziona
-            </a>
-          </div>
+        {/* Form email waitlist */}
+        <FadeIn delay={200}>
+          {status === 'success' || status === 'duplicate' ? (
+            <div style={{
+              backgroundColor: 'rgba(232,168,89,0.15)', borderRadius: 16,
+              padding: '16px 24px', border: `1px solid ${C.cream200}`,
+              marginBottom: 20,
+            }}>
+              <p style={{ color: C.honey, fontWeight: 600, fontSize: 15, margin: 0 }}>{msg}</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} noValidate style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                <input
+                  type="email"
+                  placeholder="La tua email"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); if (status === 'error') setStatus('idle') }}
+                  style={{
+                    flex: '1 1 200px', maxWidth: 280,
+                    padding: '13px 20px', borderRadius: 999,
+                    border: status === 'error'
+                      ? '1.5px solid rgba(176,64,64,0.5)'
+                      : `1.5px solid ${C.cream200}`,
+                    backgroundColor: C.cream50,
+                    color: C.bowtie, fontSize: 14, outline: 'none',
+                    fontFamily: 'var(--font-sans)',
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={status === 'loading'}
+                  style={{
+                    padding: '13px 24px', borderRadius: 999, fontSize: 14, fontWeight: 600,
+                    backgroundColor: C.gold, color: C.white, border: 'none',
+                    cursor: status === 'loading' ? 'not-allowed' : 'pointer',
+                    transition: 'background-color 0.2s', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    opacity: status === 'loading' ? 0.75 : 1,
+                    boxShadow: '0 6px 20px -4px rgba(232,168,89,0.5)',
+                  }}
+                  onMouseOver={e => { if (status !== 'loading') e.currentTarget.style.backgroundColor = C.honey }}
+                  onMouseOut={e => { e.currentTarget.style.backgroundColor = C.gold }}>
+                  {status === 'loading'
+                    ? <span style={{
+                        width: 16, height: 16,
+                        border: '2px solid rgba(255,255,255,0.4)',
+                        borderTopColor: C.white, borderRadius: '50%',
+                        display: 'inline-block', animation: 'spin 0.7s linear infinite',
+                      }} />
+                    : 'Entra in lista'}
+                </button>
+              </div>
+              {status === 'error' && (
+                <p style={{ color: '#B04040', fontSize: 13, marginTop: 8 }}>{msg}</p>
+              )}
+            </form>
+          )}
         </FadeIn>
 
         {/* Social proof */}
-        <FadeIn delay={320}>
-          <p style={{ fontSize: 12, color: C.muted, marginTop: 32, letterSpacing: '0.02em' }}>
+        <FadeIn delay={280}>
+          <p style={{ fontSize: 12, color: C.muted, letterSpacing: '0.02em' }}>
             🐾 Già <strong style={{ color: C.bowtie }}>1.200+ proprietari</strong> in lista d'attesa
           </p>
         </FadeIn>
 
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </section>
   )
 }
@@ -437,18 +504,24 @@ function Pricing() {
 // ─── Waitlist ─────────────────────────────────────────────────────────────────
 function Waitlist() {
   const [email, setEmail]   = useState('')
-  const [status, setStatus] = useState('idle') // idle | loading | success | error
+  const [status, setStatus] = useState('idle') // idle | loading | success | error | duplicate
   const [msg, setMsg]       = useState('')
+
+  const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!email.trim()) return
+    if (!isValidEmail(email)) {
+      setMsg('Inserisci un indirizzo email valido.')
+      setStatus('error')
+      return
+    }
     setStatus('loading')
     const { error } = await supabase.from('waitlist').insert({ email: email.trim().toLowerCase() })
     if (error) {
       if (error.code === '23505') {
-        setMsg('Sei già in lista! Ti avviseremo presto. 🐾')
-        setStatus('success')
+        setMsg('Sei già in lista! Ti contatteremo presto.')
+        setStatus('duplicate')
       } else {
         setMsg('Qualcosa è andato storto. Riprova tra poco.')
         setStatus('error')
@@ -461,110 +534,164 @@ function Waitlist() {
   }
 
   return (
-    <section style={{
-      backgroundColor: C.bowtie, padding: '80px 24px',
-      backgroundImage: 'radial-gradient(600px 400px at 80% 50%, rgba(232,168,89,0.08), transparent 65%)',
-    }}>
-      <div style={{ maxWidth: 560, margin: '0 auto', textAlign: 'center' }}>
-
+    <section style={{ backgroundColor: C.cream50, padding: '80px 24px' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
         <FadeIn>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
-            letterSpacing: '0.14em', color: 'rgba(232,168,89,0.8)', marginBottom: 16 }}>
-            Early access
-          </p>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 400,
-            fontSize: 'clamp(28px, 5vw, 42px)', letterSpacing: '-0.02em',
-            color: C.white, margin: '0 0 14px' }}>
-            Bertie sta{' '}
-            <em style={{ fontStyle: 'italic', color: C.gold }}>arrivando.</em>
-          </h2>
-          <p style={{ fontSize: 16, lineHeight: 1.65, color: 'rgba(255,255,255,0.65)',
-            margin: '0 0 36px', maxWidth: 400, marginLeft: 'auto', marginRight: 'auto' }}>
-            Entra in lista e ricevi l'accesso in anteprima.
-          </p>
-        </FadeIn>
-
-        <FadeIn delay={100}>
-          {status === 'success' ? (
+          <div style={{
+            backgroundColor: C.bowtie,
+            borderRadius: 24,
+            padding: 'clamp(36px, 6vw, 64px) clamp(24px, 5vw, 56px)',
+            textAlign: 'center',
+            backgroundImage: 'radial-gradient(500px 350px at 80% 20%, rgba(232,168,89,0.10), transparent 60%)',
+            overflow: 'hidden',
+            position: 'relative',
+          }}>
+            {/* Decorazione sfondo */}
             <div style={{
-              backgroundColor: 'rgba(232,168,89,0.15)', borderRadius: 16,
-              padding: '20px 24px', border: '1px solid rgba(232,168,89,0.3)',
-            }}>
-              <p style={{ color: C.gold, fontWeight: 600, fontSize: 15 }}>{msg}</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-                <input
-                  type="email"
-                  placeholder="La tua email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  style={{
-                    flex: '1 1 240px', maxWidth: 320,
-                    padding: '14px 20px', borderRadius: 999,
-                    border: '1.5px solid rgba(255,255,255,0.15)',
-                    backgroundColor: 'rgba(255,255,255,0.08)',
-                    color: C.white, fontSize: 14, outline: 'none',
-                    fontFamily: 'var(--font-sans)',
-                  }}
-                />
-                <button type="submit" disabled={status === 'loading'}
-                  style={{
-                    padding: '14px 28px', borderRadius: 999, fontSize: 14, fontWeight: 600,
-                    backgroundColor: C.gold, color: C.white, border: 'none',
-                    cursor: 'pointer', transition: 'background-color 0.2s',
-                    flexShrink: 0, minWidth: 140,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  }}
-                  onMouseOver={e => e.currentTarget.style.backgroundColor = C.honey}
-                  onMouseOut={e => e.currentTarget.style.backgroundColor = C.gold}>
-                  {status === 'loading'
-                    ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    : 'Entra in lista'
-                  }
-                </button>
-              </div>
-              {status === 'error' && (
-                <p style={{ color: '#F0A0A0', fontSize: 13, marginTop: 10 }}>{msg}</p>
-              )}
-            </form>
-          )}
-        </FadeIn>
+              position: 'absolute', left: -60, bottom: -60,
+              width: 220, height: 220, borderRadius: '50%',
+              backgroundColor: 'rgba(232,168,89,0.06)', pointerEvents: 'none',
+            }} />
 
+            {/* Eyebrow */}
+            <p style={{
+              fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
+              letterSpacing: '0.14em', color: 'rgba(232,168,89,0.75)', marginBottom: 16,
+            }}>
+              Early access
+            </p>
+
+            {/* Titolo */}
+            <h2 style={{
+              fontFamily: 'var(--font-display)', fontWeight: 400,
+              fontSize: 'clamp(32px, 5vw, 48px)', letterSpacing: '-0.02em',
+              color: C.white, margin: '0 0 16px', lineHeight: 1.1,
+            }}>
+              Bertie sta{' '}
+              <em style={{ fontStyle: 'italic', color: C.gold }}>arrivando.</em>
+            </h2>
+
+            {/* Sottotitolo */}
+            <p style={{
+              fontSize: 16, lineHeight: 1.65, color: 'rgba(255,255,255,0.60)',
+              margin: '0 auto 24px', maxWidth: 380,
+            }}>
+              Entra in lista e ricevi l'accesso in anteprima.<br />
+              Gratis, senza impegno.
+            </p>
+
+            {/* Social proof */}
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              backgroundColor: 'rgba(232,168,89,0.14)',
+              border: '1px solid rgba(232,168,89,0.25)',
+              borderRadius: 999, padding: '7px 16px',
+              fontSize: 13, color: 'rgba(255,255,255,0.8)',
+              marginBottom: 32,
+            }}>
+              🐾 Già <strong style={{ color: C.gold }}>1.200+</strong> proprietari in lista d'attesa
+            </div>
+
+            {/* Form / Feedback */}
+            {status === 'success' || status === 'duplicate' ? (
+              <div style={{
+                backgroundColor: 'rgba(232,168,89,0.15)', borderRadius: 16,
+                padding: '18px 24px', border: '1px solid rgba(232,168,89,0.30)',
+              }}>
+                <p style={{ color: C.gold, fontWeight: 600, fontSize: 15, margin: 0 }}>{msg}</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} noValidate>
+                <div style={{
+                  display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center',
+                }}>
+                  <input
+                    type="email"
+                    placeholder="La tua email"
+                    value={email}
+                    onChange={e => { setEmail(e.target.value); if (status === 'error') setStatus('idle') }}
+                    style={{
+                      flex: '1 1 220px', maxWidth: 300,
+                      padding: '14px 20px', borderRadius: 999,
+                      border: status === 'error'
+                        ? '1.5px solid rgba(240,100,100,0.6)'
+                        : '1.5px solid rgba(255,255,255,0.15)',
+                      backgroundColor: 'rgba(255,255,255,0.08)',
+                      color: C.white, fontSize: 14, outline: 'none',
+                      fontFamily: 'var(--font-sans)',
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={status === 'loading'}
+                    style={{
+                      padding: '14px 28px', borderRadius: 999, fontSize: 14, fontWeight: 600,
+                      backgroundColor: C.gold, color: C.white, border: 'none',
+                      cursor: status === 'loading' ? 'not-allowed' : 'pointer',
+                      transition: 'background-color 0.2s', flexShrink: 0, minWidth: 148,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      opacity: status === 'loading' ? 0.75 : 1,
+                    }}
+                    onMouseOver={e => { if (status !== 'loading') e.currentTarget.style.backgroundColor = C.honey }}
+                    onMouseOut={e => { e.currentTarget.style.backgroundColor = C.gold }}>
+                    {status === 'loading'
+                      ? <span style={{
+                          width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)',
+                          borderTopColor: C.white, borderRadius: '50%',
+                          display: 'inline-block', animation: 'spin 0.7s linear infinite',
+                        }} />
+                      : 'Entra in lista'}
+                  </button>
+                </div>
+                {status === 'error' && (
+                  <p style={{ color: '#F0A0A0', fontSize: 13, marginTop: 10, margin: '10px 0 0' }}>
+                    {msg}
+                  </p>
+                )}
+              </form>
+            )}
+          </div>
+        </FadeIn>
       </div>
+
+      {/* keyframe per lo spinner */}
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
     </section>
   )
 }
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
 function Footer() {
+  const linkStyle = {
+    fontSize: 13, color: 'rgba(255,255,255,0.45)',
+    textDecoration: 'none', transition: 'color 0.2s',
+  }
+  const hover = { color: 'rgba(255,255,255,0.85)' }
   return (
     <footer style={{ backgroundColor: C.bowtie, borderTop: '1px solid rgba(255,255,255,0.06)',
-      padding: '28px 24px' }}>
-      <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 20 }}>
-            <span style={{ color: 'rgba(255,255,255,0.8)' }}>Ber</span>
-            <em style={{ color: C.gold, fontStyle: 'italic' }}>tie</em>
+      padding: '24px 24px' }}>
+      <div style={{ maxWidth: 1120, margin: '0 auto',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: 12 }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: 20 }}>
+          <span style={{ color: 'rgba(255,255,255,0.8)' }}>Ber</span>
+          <em style={{ color: C.gold, fontStyle: 'italic' }}>tie</em>
+        </span>
+        <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+          <a href="/privacy" style={linkStyle}
+            onMouseOver={e => Object.assign(e.currentTarget.style, hover)}
+            onMouseOut={e => Object.assign(e.currentTarget.style, linkStyle)}>
+            Privacy Policy
+          </a>
+          <a href="/termini" style={linkStyle}
+            onMouseOver={e => Object.assign(e.currentTarget.style, hover)}
+            onMouseOut={e => Object.assign(e.currentTarget.style, linkStyle)}>
+            Termini e condizioni
+          </a>
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.30)' }}>
+            © 2025 Bertie
           </span>
-          <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-            <a href="/privacy" style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)',
-              textDecoration: 'none', transition: 'color 0.2s' }}
-              onMouseOver={e => e.currentTarget.style.color = 'rgba(255,255,255,0.8)'}
-              onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.45)'}>
-              Privacy Policy
-            </a>
-            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
-              © 2025 Bertie
-            </span>
-          </div>
         </div>
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', margin: 0, lineHeight: 1.5 }}>
-          Bertie può ricevere commissioni sugli acquisti effettuati tramite i link presenti nell'app (programma Amazon Affiliates e partner selezionati). I prezzi e la disponibilità dei prodotti sono soggetti a variazioni.
-        </p>
       </div>
     </footer>
   )
@@ -576,9 +703,6 @@ export default function Landing() {
     <div style={{ fontFamily: 'var(--font-sans)', backgroundColor: C.biscuit }}>
       <Navbar />
       <Hero />
-      <Features />
-      <Pricing />
-      <Waitlist />
       <Footer />
     </div>
   )

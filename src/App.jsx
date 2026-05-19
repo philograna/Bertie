@@ -6,6 +6,7 @@ import Auth from './pages/Auth'
 import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
 import Notifiche from './pages/Notifiche'
+import Termini from './pages/Termini'
 import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/landing" element={<Landing />} />
+        <Route path="/termini" element={<Termini />} />
         <Route path="/login" element={<Auth />} />
         <Route path="/registrati" element={<Auth />} />
         <Route path="/onboarding" element={
