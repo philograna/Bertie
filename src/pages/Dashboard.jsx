@@ -1430,19 +1430,23 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
             borderRadius: '50%', backgroundColor: 'rgba(232,168,89,0.05)', pointerEvents: 'none' }} />
           <p style={{
             fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
-            letterSpacing: '0.12em', color: 'rgba(232,168,89,0.70)', marginBottom: 8, position: 'relative',
+            letterSpacing: '0.12em', color: 'rgba(232,168,89,0.70)', marginBottom: 8,
+            position: 'relative', textAlign: 'center',
           }}>
             Bertie Supporter
           </p>
-          <p style={{ fontSize: 19, fontWeight: 700, color: '#FFFFFF', marginBottom: 4, position: 'relative' }}>
+          <p style={{ fontSize: 19, fontWeight: 700, color: '#FFFFFF', marginBottom: 4,
+            position: 'relative', textAlign: 'center' }}>
             Supporta Bertie
           </p>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 18, position: 'relative' }}>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 18,
+            position: 'relative', textAlign: 'center' }}>
             €9,99/anno · meno di €1 al mese · zero pubblicità
           </p>
           <ul style={{
             listStyle: 'none', padding: 0, margin: '0 0 20px',
             display: 'flex', flexDirection: 'column', gap: 8, position: 'relative',
+            alignItems: 'center',
           }}>
             {['Zero pubblicità', 'Badge Supporter nel profilo', 'Accesso anticipato alle feature'].map(f => (
               <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 8,
