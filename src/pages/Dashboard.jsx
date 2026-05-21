@@ -461,13 +461,88 @@ const userIcon = L.divIcon({
   iconAnchor: [8, 8],
 })
 
-function MappaView() {
+const ROVER_AFFILIATE = import.meta.env.VITE_ROVER_AFFILIATE_ID || ''
+
+function buildRoverLink(city) {
+  const base = 'https://www.rover.com/it/search/'
+  const params = new URLSearchParams({
+    location: city || 'Italia',
+    utm_source: 'bertie',
+    ...(ROVER_AFFILIATE ? { ref: ROVER_AFFILIATE } : {}),
+  })
+  return `${base}?${params.toString()}`
+}
+
+function RoverBanner({ city }) {
+  return (
+    <div>
+      <div
+        onClick={() => window.open(buildRoverLink(city), '_blank')}
+        style={{
+          backgroundColor: '#E8A859',
+          borderRadius: 14,
+          margin: '0 0 0 0',
+          padding: '12px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          cursor: 'pointer',
+          userSelect: 'none',
+        }}
+      >
+        {/* Sinistra: icona + testi */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+          <span style={{ fontSize: 24, flexShrink: 0 }}>🐾</span>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', margin: 0, lineHeight: 1.2 }}>
+              Cerchi un dog sitter?
+            </p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', margin: '2px 0 0', lineHeight: 1.3 }}>
+              Sitter verificati vicino a te con Rover
+            </p>
+          </div>
+        </div>
+
+        {/* Destra: bottone */}
+        <button
+          onClick={e => { e.stopPropagation(); window.open(buildRoverLink(city), '_blank') }}
+          style={{
+            backgroundColor: '#FFFFFF',
+            color: '#E8A859',
+            fontWeight: 700,
+            fontSize: 13,
+            border: 'none',
+            borderRadius: 999,
+            padding: '7px 14px',
+            cursor: 'pointer',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Cerca →
+        </button>
+      </div>
+
+      {/* Disclaimer */}
+      <p style={{
+        fontSize: 9, color: '#A7A8A8', textAlign: 'right',
+        margin: '3px 4px 0', fontFamily: 'var(--font-mono)',
+        textTransform: 'uppercase', letterSpacing: '0.06em',
+      }}>
+        Powered by Rover.com
+      </p>
+    </div>
+  )
+}
+
+function MappaView({ city: cityProp = '' }) {
   const [filtro, setFiltro]   = useState('tutti')
   const [userPos, setUserPos] = useState(null)
   const [geoError, setGeoError] = useState(false)
   const [luoghi, setLuoghi]   = useState([])
   const [loading, setLoading] = useState(false)
-  const [pagina, setPagina] = useState(1)
+  const [pagina, setPagina]   = useState(1)
+  const [cityName, setCityName] = useState(cityProp)
 
   useEffect(() => {
     if (!navigator.geolocation) { setGeoError(true); return }
@@ -477,6 +552,22 @@ function MappaView() {
       { enableHighAccuracy: true, timeout: 8000 }
     )
   }, [])
+
+  // Reverse geocoding per ricavare la città dai coords quando non è nel profilo
+  useEffect(() => {
+    if (cityProp) { setCityName(cityProp); return }
+    if (!userPos) return
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userPos.lat}&lon=${userPos.lng}`,
+      { headers: { 'Accept-Language': 'it' } }
+    )
+      .then(r => r.json())
+      .then(d => {
+        const c = d.address?.city || d.address?.town || d.address?.village || ''
+        if (c) setCityName(c)
+      })
+      .catch(() => {})
+  }, [userPos, cityProp])
 
   useEffect(() => {
     if (!userPos) return
@@ -529,6 +620,9 @@ function MappaView() {
 
   return (
     <div className="flex flex-col gap-3">
+
+      {/* ── Rover banner ── */}
+      <RoverBanner city={cityName} />
 
       {/* ── Mappa ── */}
       {!userPos && !geoError ? (
@@ -1786,8 +1880,9 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [tab, setTab]               = useState('vaccini')
-  const [isSupporter, setIsSupporter]       = useState(false)
+  const [isSupporter, setIsSupporter]           = useState(false)
   const [supporterExpires, setSupporterExpires] = useState(null)
+  const [userCity, setUserCity]                 = useState('')
   const [upgrading, setUpgrading]           = useState(false)
   const [upgradeError, setUpgradeError]     = useState('')
   const [showSuccess, setShowSuccess]   = useState(false)
@@ -1812,12 +1907,13 @@ export default function Dashboard() {
     const name = meta.full_name || meta.name || u.email?.split('@')[0] || null
     setUserName(name)
     const [{ data: profile }, { data: dog }] = await Promise.all([
-      supabase.from('profiles').select('supporter, supporter_expires').eq('id', u.id).maybeSingle(),
+      supabase.from('profiles').select('supporter, supporter_expires, city').eq('id', u.id).maybeSingle(),
       supabase.from('dogs').select('name, breed, photo_url, weight, age_label, sex').eq('user_id', u.id).maybeSingle(),
     ])
     if (profile) {
       setIsSupporter(!!profile.supporter)
       setSupporterExpires(profile.supporter_expires || null)
+      setUserCity(profile.city || '')
     }
     if (dog) {
       setDogId(dog.id)
@@ -1955,7 +2051,7 @@ export default function Dashboard() {
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-4 pb-28">
         {tab === 'vaccini'   && <SaluteView dogName={dogName} dogRazza={dogRazza} photoUrl={dogPhotoUrl} dogWeight={dogWeight} dogAge={dogAge} dogSex={dogSex} userName={userName} />}
-        {tab === 'mappa'     && <MappaView />}
+        {tab === 'mappa'     && <MappaView city={userCity} />}
         {tab === 'aivet'     && <AIVetView isSupporter={isSupporter} />}
         {tab === 'diario'    && <LibrettoView dogName={dogName} dogId={dogId} />}
         {tab === 'accessori' && <AccessoriView dogName={dogName} dogRazza={dogRazza} />}
