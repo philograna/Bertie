@@ -1320,17 +1320,17 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
     <div className="flex flex-col gap-4 pb-4">
 
       {/* ── Dog hero card ── */}
-      <div className="rounded-[22px] px-5 py-6 flex flex-col items-center gap-4 relative overflow-hidden"
-        style={{ backgroundColor: '#E8A859', boxShadow: '0 12px 32px -12px rgba(232,168,89,.6)' }}>
-        {/* bg circle decoration */}
-        <div style={{ position: 'absolute', right: -50, bottom: -50, width: 200, height: 200,
+      <div className="rounded-[20px] px-4 py-4 flex items-center gap-4 relative overflow-hidden"
+        style={{ backgroundColor: '#E8A859', boxShadow: '0 8px 24px -8px rgba(232,168,89,.55)' }}>
+        {/* bg decoration */}
+        <div style={{ position: 'absolute', right: -40, bottom: -40, width: 160, height: 160,
           backgroundColor: 'rgba(255,255,255,0.10)', borderRadius: '50%', pointerEvents: 'none' }} />
 
-        {/* Avatar */}
-        <div className="relative">
+        {/* Avatar — sinistra */}
+        <div className="relative shrink-0">
           <div
-            className="w-[88px] h-[88px] rounded-full overflow-hidden cursor-pointer shrink-0"
-            style={{ border: '3px solid rgba(255,255,255,0.6)', backgroundColor: '#F6ECC8' }}
+            className="w-[72px] h-[72px] rounded-full overflow-hidden cursor-pointer"
+            style={{ border: '2.5px solid rgba(255,255,255,0.65)', backgroundColor: '#F6ECC8' }}
             onClick={() => fileRef.current?.click()}
           >
             {photoUrl
@@ -1340,36 +1340,43 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
           </div>
           <button
             onClick={() => fileRef.current?.click()}
-            className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: '#2A2C2C', boxShadow: '0 2px 8px rgba(0,0,0,0.25)' }}
+            className="absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: '#2A2C2C', boxShadow: '0 2px 6px rgba(0,0,0,0.25)' }}
           >
             {uploading
-              ? <div className="w-3.5 h-3.5 border-2 border-t-transparent rounded-full animate-spin"
+              ? <div className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin"
                   style={{ borderColor: '#F6ECC8', borderTopColor: 'transparent' }} />
-              : <Camera size={13} style={{ color: '#F6ECC8' }} />
+              : <Camera size={11} style={{ color: '#F6ECC8' }} />
             }
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
         </div>
 
-        <div className="text-center relative z-10">
-          <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 26,
-            color: '#FFFFFF', lineHeight: 1.1, marginBottom: 4 }}>
+        {/* Nome + pill — destra */}
+        <div className="flex-1 relative z-10 min-w-0">
+          <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22,
+            color: '#FFFFFF', lineHeight: 1.1, marginBottom: 2,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {dogName || 'Il mio cane'}
           </p>
           {dogRazza && (
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.80)' }}>{dogRazza}</p>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.80)', marginBottom: 10,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {dogRazza}
+            </p>
           )}
+          <button
+            onClick={() => navigate('/onboarding')}
+            style={{
+              fontSize: 12, fontWeight: 600, color: '#FFFFFF',
+              backgroundColor: 'rgba(255,255,255,0.20)',
+              border: '1px solid rgba(255,255,255,0.35)',
+              borderRadius: 999, padding: '6px 14px', cursor: 'pointer',
+            }}
+          >
+            {dogName ? 'Modifica profilo' : '+ Aggiungi profilo'}
+          </button>
         </div>
-
-        <button
-          onClick={() => navigate('/onboarding')}
-          className="px-5 py-2.5 text-sm font-semibold relative z-10"
-          style={{ backgroundColor: 'rgba(255,255,255,0.22)', color: '#FFFFFF',
-            border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999 }}
-        >
-          {dogName ? 'Modifica profilo' : '+ Aggiungi profilo'}
-        </button>
       </div>
 
 
