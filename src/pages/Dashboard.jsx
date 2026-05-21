@@ -1364,8 +1364,8 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
 
         {/* Nome + pill — centrati sull'intera card */}
         <div style={{
-          position: 'absolute', left: 0, right: 0,
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+          position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
           zIndex: 1, pointerEvents: 'none',
         }}>
           <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22,
