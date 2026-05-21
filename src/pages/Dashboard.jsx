@@ -314,7 +314,7 @@ function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, us
         <div className="flex items-center justify-between px-4 py-2.5"
           style={{ backgroundColor: '#FBF6E2', borderTop: '1px solid #F6ECC8' }}>
           <span className="flex items-center gap-1.5 text-xs font-bold" style={{ color: '#B77336' }}>
-            ✂️ Toelettatura
+            💨 Toelettatura
           </span>
           <button className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#E8A859' }}>
             <Plus size={11} /> Prenota
@@ -379,7 +379,7 @@ const FILTRI = [
   { id: 'parco',        label: '🌳 Parchi' },
   { id: 'spiaggia',     label: '🏖️ Spiagge' },
   { id: 'veterinario',  label: '🩺 Veterinari' },
-  { id: 'toelettatore', label: '✂️ Toelettatori' },
+  { id: 'toelettatore', label: '💨 Toelettatori' },
   { id: 'ristorante',   label: '🍽️ Ristoranti' },
   { id: 'bar',          label: '☕ Bar' },
 ]
@@ -432,7 +432,7 @@ function classifyElement(tags) {
   if (tags.leisure === 'dog_park' || tags.leisure === 'park')             return { tipo: 'parco',        emoji: '🌳' }
   if (tags.leisure === 'beach'    || tags.natural === 'beach')            return { tipo: 'spiaggia',     emoji: '🏖️' }
   if (tags.amenity === 'veterinary')                                      return { tipo: 'veterinario',  emoji: '🩺' }
-  if (tags.amenity === 'groomer'  || tags.shop === 'pet_grooming')        return { tipo: 'toelettatore', emoji: '✂️' }
+  if (tags.amenity === 'groomer'  || tags.shop === 'pet_grooming')        return { tipo: 'toelettatore', emoji: '💨' }
   if (tags.amenity === 'restaurant')                                      return { tipo: 'ristorante',   emoji: '🍽️' }
   if (tags.amenity === 'bar'      || tags.amenity === 'cafe')             return { tipo: 'bar',          emoji: '☕' }
   return null
@@ -774,7 +774,7 @@ function AIVetView({ isSupporter }) {
           style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
           {[
             { icon: '🩺', label: 'AI Veterinario', sub: '10 domande al mese' },
-            { icon: '✂️', label: 'Prenota groomer', sub: 'Dog sitter e toelettatori vicino a te' },
+            { icon: '💨', label: 'Prenota groomer', sub: 'Dog sitter e toelettatori vicino a te' },
             { icon: '🛂', label: 'Passaporto EU',   sub: 'Digitale, per viaggiare con il tuo cane' },
             { icon: '🐾', label: 'Community locale',sub: 'Passeggiate di gruppo e amici a 4 zampe' },
             { icon: '🐶', label: 'Animali illimitati', sub: 'Aggiungi tutti i tuoi cani' },
