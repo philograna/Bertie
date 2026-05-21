@@ -29,24 +29,75 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
   )
 
+  // ── Pagamento avvenuto → attiva Supporter ────────────────────────────────
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session
-    const userId  = session.client_reference_id
+    const session        = event.data.object as Stripe.Checkout.Session
+    const userId         = session.client_reference_id
+    const customerId     = session.customer as string
+    const subscriptionId = session.subscription as string
 
     if (userId) {
+      const now         = new Date()
+      const expiresDate = new Date(now)
+      expiresDate.setFullYear(expiresDate.getFullYear() + 1)
+
       await supabase.from('profiles').update({
-        premium: true,
-        stripe_customer_id: session.customer as string,
+        supporter:          true,
+        supporter_since:    now.toISOString(),
+        supporter_expires:  expiresDate.toISOString(),
+        stripe_customer_id: customerId,
       }).eq('id', userId)
+
+      if (subscriptionId) {
+        const sub = await stripe.subscriptions.retrieve(subscriptionId)
+        await supabase.from('supporter_subscriptions').upsert({
+          user_id:                userId,
+          stripe_customer_id:     customerId,
+          stripe_subscription_id: subscriptionId,
+          status:                 sub.status,
+          current_period_end:     new Date(sub.current_period_end * 1000).toISOString(),
+        }, { onConflict: 'stripe_subscription_id' })
+      }
     }
   }
 
-  // Gestisci cancellazione abbonamento
-  if (event.type === 'customer.subscription.deleted') {
-    const sub = event.data.object as Stripe.Subscription
+  // ── Rinnovo annuale → aggiorna expiry ────────────────────────────────────
+  if (event.type === 'invoice.payment_succeeded') {
+    const invoice        = event.data.object as Stripe.Invoice
+    const subscriptionId = invoice.subscription as string
+    if (subscriptionId && invoice.billing_reason === 'subscription_cycle') {
+      const sub        = await stripe.subscriptions.retrieve(subscriptionId)
+      const customerId = sub.customer as string
+      const newExpiry  = new Date(sub.current_period_end * 1000)
+
+      await supabase.from('profiles').update({
+        supporter:         true,
+        supporter_expires: newExpiry.toISOString(),
+      }).eq('stripe_customer_id', customerId)
+
+      await supabase.from('supporter_subscriptions').update({
+        status:             sub.status,
+        current_period_end: newExpiry.toISOString(),
+      }).eq('stripe_subscription_id', subscriptionId)
+    }
+  }
+
+  // ── Cancellazione → revoca Supporter ─────────────────────────────────────
+  if (
+    event.type === 'customer.subscription.deleted' ||
+    event.type === 'customer.subscription.paused'
+  ) {
+    const sub        = event.data.object as Stripe.Subscription
     const customerId = sub.customer as string
-    await supabase.from('profiles').update({ premium: false })
-      .eq('stripe_customer_id', customerId)
+
+    await supabase.from('profiles').update({
+      supporter:         false,
+      supporter_expires: null,
+    }).eq('stripe_customer_id', customerId)
+
+    await supabase.from('supporter_subscriptions').update({
+      status: sub.status,
+    }).eq('stripe_subscription_id', sub.id)
   }
 
   return new Response(JSON.stringify({ received: true }), {

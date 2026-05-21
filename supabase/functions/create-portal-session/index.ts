@@ -12,16 +12,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const stripeKey = Deno.env.get('STRIPE_SECRET_KEY')
-    if (!stripeKey) throw new Error('STRIPE_SECRET_KEY non configurata')
-
-    const priceId = Deno.env.get('STRIPE_PRICE_ID')
-    if (!priceId) throw new Error('STRIPE_PRICE_ID non configurata')
-
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) throw new Error('Token di autenticazione mancante')
+    if (!authHeader) throw new Error('Non autorizzato')
 
-    // Verifica utente Supabase
+    // Verifica utente
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -31,27 +25,31 @@ Deno.serve(async (req) => {
     )
     if (authError || !user) throw new Error('Non autorizzato')
 
-    const stripe = new Stripe(stripeKey, {
+    // Leggi stripe_customer_id dal profilo (service role per bypassare RLS)
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    )
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('stripe_customer_id')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (!profile?.stripe_customer_id) {
+      throw new Error('Nessun abbonamento attivo trovato')
+    }
+
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
       apiVersion: '2024-04-10',
       httpClient: Stripe.createFetchHttpClient(),
     })
 
-    const origin = req.headers.get('origin') || 'http://localhost:5173'
+    const origin = req.headers.get('origin') || 'https://bertie.app'
 
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      customer_email: user.email,
-      client_reference_id: user.id,
-      line_items: [{
-        price: priceId,
-        quantity: 1,
-      }],
-      success_url: `${origin}/dashboard?supporter=1`,
-      cancel_url:  `${origin}/dashboard`,
-      locale: 'it',
-      subscription_data: {
-        metadata: { user_id: user.id },
-      },
+    const session = await stripe.billingPortal.sessions.create({
+      customer:   profile.stripe_customer_id,
+      return_url: `${origin}/dashboard`,
     })
 
     return new Response(JSON.stringify({ url: session.url }), {

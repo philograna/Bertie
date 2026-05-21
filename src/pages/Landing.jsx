@@ -335,22 +335,23 @@ const FREE_FEATURES = [
   'Profilo cane (fino a 2 animali)',
   'Tracker vaccini con reminder',
   'Calendario antiparassitari',
-  'Diario salute base',
+  'Diario salute',
   'Mappa dog-friendly',
+  '1 banner in fondo all\'app',
 ]
-const PREMIUM_FEATURES = [
-  'Tutto il piano Free',
-  'Animali illimitati',
-  'Prenotazione groomer e dog sitter',
-  'Fascicolo sanitario condivisibile',
-  'Community locale e passeggiate',
-  'Storico completo visite veterinarie',
+const SUPPORTER_FEATURES = [
+  'Tutto il piano gratuito',
+  'Zero pubblicità',
+  'Badge Supporter nel profilo',
+  'Accesso anticipato alle nuove feature',
+  'Meno di €1 al mese',
 ]
 
-function Check({ gold }) {
+function PricingCheck({ light }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-      stroke={gold ? C.gold : C.bowtie} strokeWidth="2.5">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+      stroke={light ? 'rgba(232,168,89,0.85)' : C.honey} strokeWidth="2.5"
+      style={{ flexShrink: 0 }}>
       <path d="M20 6L9 17l-5-5"/>
     </svg>
   )
@@ -359,120 +360,141 @@ function Check({ gold }) {
 function Pricing() {
   const navigate = useNavigate()
   return (
-    <section id="pricing" style={{ backgroundColor: C.biscuit, padding: '80px 24px' }}>
-      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+    <section id="pricing" style={{ backgroundColor: C.biscuit, padding: '72px 24px 80px' }}>
+      <div style={{ maxWidth: 780, margin: '0 auto' }}>
 
         <FadeIn>
-          <div style={{ textAlign: 'center', marginBottom: 52 }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
-              letterSpacing: '0.14em', color: C.honey, marginBottom: 12 }}>
-              Prezzi
-            </p>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 400,
-              fontSize: 'clamp(28px, 5vw, 42px)', letterSpacing: '-0.02em',
-              color: C.bowtie, margin: 0 }}>
-              Semplice. Trasparente.{' '}
-              <em style={{ fontStyle: 'italic', color: C.gold }}>Per tutti.</em>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <h2 style={{
+              fontFamily: 'var(--font-display)', fontWeight: 400,
+              fontSize: 'clamp(26px, 5vw, 40px)', letterSpacing: '-0.02em',
+              color: C.bowtie, margin: '0 0 12px', lineHeight: 1.1,
+            }}>
+              Bertie è gratis.{' '}
+              <em style={{ fontStyle: 'italic', color: C.gold }}>Per sempre.</em>
             </h2>
+            <p style={{ fontSize: 16, color: C.muted, margin: 0, lineHeight: 1.6 }}>
+              Chi vuole supportare il progetto può diventare Supporter.
+            </p>
           </div>
         </FadeIn>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: 20,
+        }}>
 
-          {/* Free */}
+          {/* ── Gratis ── */}
           <FadeIn delay={0}>
             <div style={{
               backgroundColor: C.cream50, borderRadius: 22,
-              padding: '32px 28px', border: `1.5px solid ${C.cream200}`,
+              padding: '32px 28px',
+              border: `1.5px solid ${C.cream200}`,
+              display: 'flex', flexDirection: 'column',
             }}>
-              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
-                letterSpacing: '0.12em', color: C.muted, marginBottom: 8 }}>
-                Free
+              <p style={{
+                fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
+                letterSpacing: '0.12em', color: C.muted, marginBottom: 8,
+              }}>
+                Gratuito
               </p>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: 40,
-                color: C.bowtie, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+              <p style={{
+                fontFamily: 'var(--font-display)', fontSize: 42,
+                color: C.bowtie, margin: '0 0 4px', letterSpacing: '-0.02em',
+              }}>
                 €0
               </p>
-              <p style={{ fontSize: 13, color: C.muted, marginBottom: 28 }}>Per sempre gratuito</p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={{ fontSize: 13, color: C.muted, marginBottom: 28 }}>
+                Gratis per sempre
+              </p>
+              <ul style={{
+                listStyle: 'none', padding: 0, margin: '0 0 0', flex: 1,
+                display: 'flex', flexDirection: 'column', gap: 11,
+              }}>
                 {FREE_FEATURES.map(f => (
-                  <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10,
-                    fontSize: 14, color: C.bowtie }}>
-                    <Check />{f}
+                  <li key={f} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    fontSize: 14, color: C.bowtie,
+                  }}>
+                    <PricingCheck />{f}
                   </li>
                 ))}
               </ul>
-              <button onClick={() => navigate('/registrati')}
+            </div>
+          </FadeIn>
+
+          {/* ── Supporter ── */}
+          <FadeIn delay={100}>
+            <div style={{
+              backgroundColor: C.bowtie, borderRadius: 22,
+              padding: '32px 28px',
+              boxShadow: '0 20px 48px -16px rgba(70,73,73,0.50)',
+              position: 'relative', overflow: 'hidden',
+              display: 'flex', flexDirection: 'column',
+            }}>
+              {/* decoration */}
+              <div style={{
+                position: 'absolute', right: -40, top: -40, width: 160, height: 160,
+                backgroundColor: 'rgba(232,168,89,0.08)', borderRadius: '50%', pointerEvents: 'none',
+              }} />
+              <div style={{
+                position: 'absolute', left: -30, bottom: -30, width: 120, height: 120,
+                backgroundColor: 'rgba(232,168,89,0.05)', borderRadius: '50%', pointerEvents: 'none',
+              }} />
+
+              <p style={{
+                fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
+                letterSpacing: '0.12em', color: 'rgba(232,168,89,0.70)', marginBottom: 8,
+                position: 'relative',
+              }}>
+                Supporter
+              </p>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 4, position: 'relative' }}>
+                <p style={{
+                  fontFamily: 'var(--font-display)', fontSize: 42,
+                  color: C.white, margin: 0, letterSpacing: '-0.02em',
+                }}>
+                  €9,99
+                </p>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', paddingBottom: 9 }}>
+                  /anno
+                </span>
+              </div>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.50)', marginBottom: 28, position: 'relative' }}>
+                Rinnovo annuale · annulla quando vuoi
+              </p>
+
+              <ul style={{
+                listStyle: 'none', padding: 0, margin: '0 0 28px', flex: 1,
+                display: 'flex', flexDirection: 'column', gap: 11, position: 'relative',
+              }}>
+                {SUPPORTER_FEATURES.map(f => (
+                  <li key={f} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    fontSize: 14, color: 'rgba(255,255,255,0.88)',
+                  }}>
+                    <PricingCheck light />{f}
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                onClick={() => navigate('/registrati')}
                 style={{
-                  width: '100%', padding: '13px', borderRadius: 999, fontSize: 14,
-                  fontWeight: 600, cursor: 'pointer', transition: 'opacity 0.2s',
-                  backgroundColor: 'transparent', color: C.bowtie,
-                  border: `1.5px solid ${C.bowtie}`,
+                  width: '100%', padding: '14px', borderRadius: 999, fontSize: 14,
+                  fontWeight: 700, cursor: 'pointer', transition: 'opacity 0.2s',
+                  backgroundColor: C.gold, color: C.white, border: 'none',
+                  boxShadow: '0 6px 20px rgba(232,168,89,0.35)',
+                  position: 'relative',
                 }}
-                onMouseOver={e => e.currentTarget.style.opacity = '0.6'}
+                onMouseOver={e => e.currentTarget.style.opacity = '0.88'}
                 onMouseOut={e => e.currentTarget.style.opacity = '1'}>
-                Inizia gratis
+                Diventa Supporter
               </button>
             </div>
           </FadeIn>
 
-          {/* Premium */}
-          <FadeIn delay={120}>
-            <div style={{
-              backgroundColor: C.gold, borderRadius: 22,
-              padding: '32px 28px',
-              boxShadow: '0 16px 40px -12px rgba(232,168,89,0.55)',
-              position: 'relative', overflow: 'hidden',
-            }}>
-              {/* Decorazione */}
-              <div style={{ position: 'absolute', right: -40, top: -40, width: 160, height: 160,
-                backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: '50%', pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', right: 20, top: 20 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, backgroundColor: 'rgba(255,255,255,0.25)',
-                  color: C.white, padding: '4px 10px', borderRadius: 999,
-                  fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                  Consigliato
-                </span>
-              </div>
-              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
-                letterSpacing: '0.12em', color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>
-                Premium
-              </p>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, marginBottom: 4 }}>
-                <p style={{ fontFamily: 'var(--font-display)', fontSize: 40,
-                  color: C.white, margin: 0, letterSpacing: '-0.02em' }}>
-                  €0,99
-                </p>
-                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', paddingBottom: 8 }}>/mese</span>
-              </div>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginBottom: 28 }}>
-                Annulla in qualsiasi momento
-              </p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {PREMIUM_FEATURES.map(f => (
-                  <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10,
-                    fontSize: 14, color: C.white }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                      stroke="rgba(255,255,255,0.9)" strokeWidth="2.5">
-                      <path d="M20 6L9 17l-5-5"/>
-                    </svg>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <button onClick={() => navigate('/registrati')}
-                style={{
-                  width: '100%', padding: '13px', borderRadius: 999, fontSize: 14,
-                  fontWeight: 700, cursor: 'pointer', transition: 'opacity 0.2s',
-                  backgroundColor: C.white, color: C.gold, border: 'none',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-                }}
-                onMouseOver={e => e.currentTarget.style.opacity = '0.9'}
-                onMouseOut={e => e.currentTarget.style.opacity = '1'}>
-                Inizia con Premium
-              </button>
-            </div>
-          </FadeIn>
         </div>
       </div>
     </section>
@@ -681,6 +703,7 @@ export default function Landing() {
     <div style={{ fontFamily: 'var(--font-sans)', backgroundColor: C.biscuit }}>
       <Navbar />
       <Hero />
+      <Pricing />
       <Footer />
     </div>
   )

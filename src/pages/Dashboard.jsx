@@ -639,14 +639,14 @@ function MappaView() {
 }
 
 // ─── Sezione AI Vet ─────────────────────────────────────────────────────────
-function AIVetView({ isPremium }) {
+function AIVetView({ isSupporter }) {
   const [msgs, setMsgs] = useState([
     { role: 'ai', text: 'Ciao! Sono il vet AI di Bertie 🐾 Descrivi i sintomi del tuo cane e ti aiuto a capire cosa fare.' },
   ])
   const [input, setInput] = useState('')
   const [count, setCount] = useState(0)
 
-  if (!isPremium) {
+  if (!isSupporter) {
     return (
       <div className="flex flex-col gap-5 pb-4">
 
@@ -1250,8 +1250,41 @@ function LibrettoView({ dogName, dogId }) {
 
 
 // ─── Sezione Profilo ────────────────────────────────────────────────────────
-function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeError,
-                       dogName, dogRazza, photoUrl: initialPhotoUrl, onPhotoChange }) {
+// ─── Banner ads (solo non-supporter) ───────────────────────────────────────
+const NAV_HEIGHT = 72
+
+function SupporterBanner({ isSupporter, onUpgrade }) {
+  if (isSupporter) return null
+  return (
+    <div style={{
+      position: 'fixed', bottom: NAV_HEIGHT, left: '50%',
+      transform: 'translateX(-50%)',
+      width: '100%', maxWidth: 430, zIndex: 40,
+    }}>
+      <div style={{
+        height: 50, backgroundColor: '#F0E8C0',
+        borderTop: '1px solid #E3D89A',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 2,
+      }}>
+        <span style={{ fontSize: 11, color: '#8C7040', fontWeight: 500, fontFamily: 'var(--font-sans)' }}>
+          Spazio pubblicitario — brand pet partner
+        </span>
+        <button onClick={onUpgrade} style={{
+          fontSize: 10, color: '#B37830', textDecoration: 'underline',
+          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+          fontFamily: 'var(--font-sans)',
+        }}>
+          Diventa Supporter per rimuoverlo →
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade, onManage,
+                       upgrading, upgradeError, dogName, dogRazza,
+                       photoUrl: initialPhotoUrl, onPhotoChange }) {
   const [photoUrl, setPhotoUrl]   = useState(initialPhotoUrl)
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef(null)
@@ -1339,6 +1372,104 @@ function ProfiloView({ navigate, user, isPremium, onUpgrade, upgrading, upgradeE
         </button>
       </div>
 
+
+      {/* ── Supporter card ── */}
+      {isSupporter ? (
+        /* Supporter attivo */
+        <div style={{
+          backgroundColor: '#E8A859', borderRadius: 20,
+          padding: '20px 20px', overflow: 'hidden', position: 'relative',
+        }}>
+          <div style={{ position: 'absolute', right: -30, bottom: -30, width: 120, height: 120,
+            borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.12)', pointerEvents: 'none' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: '50%',
+              backgroundColor: 'rgba(255,255,255,0.22)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 22, flexShrink: 0,
+            }}>
+              🎀
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF', margin: '0 0 2px' }}>
+                Sei un Supporter
+              </p>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.80)', margin: 0 }}>
+                {supporterExpires
+                  ? `Valido fino al ${new Date(supporterExpires).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}`
+                  : 'Abbonamento attivo'}
+              </p>
+            </div>
+            <button onClick={onManage} style={{
+              fontSize: 12, fontWeight: 600, color: '#FFFFFF',
+              backgroundColor: 'rgba(255,255,255,0.22)',
+              border: '1px solid rgba(255,255,255,0.35)',
+              borderRadius: 999, padding: '7px 14px', cursor: 'pointer', flexShrink: 0,
+            }}>
+              Gestisci
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Card upgrade */
+        <div style={{
+          backgroundColor: '#464949', borderRadius: 20,
+          padding: '28px 24px', overflow: 'hidden', position: 'relative',
+        }}>
+          <div style={{ position: 'absolute', right: -40, top: -40, width: 160, height: 160,
+            borderRadius: '50%', backgroundColor: 'rgba(232,168,89,0.08)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', left: -30, bottom: -30, width: 110, height: 110,
+            borderRadius: '50%', backgroundColor: 'rgba(232,168,89,0.05)', pointerEvents: 'none' }} />
+          <p style={{
+            fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase',
+            letterSpacing: '0.12em', color: 'rgba(232,168,89,0.70)', marginBottom: 8, position: 'relative',
+          }}>
+            Bertie Supporter
+          </p>
+          <p style={{ fontSize: 19, fontWeight: 700, color: '#FFFFFF', marginBottom: 4, position: 'relative' }}>
+            Supporta Bertie
+          </p>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 18, position: 'relative' }}>
+            €9,99/anno · meno di €1 al mese · zero pubblicità
+          </p>
+          <ul style={{
+            listStyle: 'none', padding: 0, margin: '0 0 20px',
+            display: 'flex', flexDirection: 'column', gap: 8, position: 'relative',
+          }}>
+            {['Zero pubblicità', 'Badge Supporter nel profilo', 'Accesso anticipato alle feature'].map(f => (
+              <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 8,
+                fontSize: 13, color: 'rgba(255,255,255,0.80)' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="rgba(232,168,89,0.85)" strokeWidth="2.5" style={{ flexShrink: 0 }}>
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+                {f}
+              </li>
+            ))}
+          </ul>
+          <button onClick={onUpgrade} disabled={upgrading}
+            style={{
+              width: '100%', padding: '13px', borderRadius: 999, fontSize: 14,
+              fontWeight: 700, cursor: upgrading ? 'not-allowed' : 'pointer',
+              backgroundColor: '#E8A859', color: '#FFFFFF', border: 'none',
+              opacity: upgrading ? 0.7 : 1, position: 'relative',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}>
+            {upgrading && (
+              <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.4)',
+                borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block',
+                animation: 'spin 0.7s linear infinite' }} />
+            )}
+            {upgrading ? 'Attendere…' : 'Diventa Supporter — €9,99/anno'}
+          </button>
+          {upgradeError && (
+            <p style={{ color: '#F0A0A0', fontSize: 12, marginTop: 8, textAlign: 'center', position: 'relative' }}>
+              {upgradeError}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* ── Settings list ── */}
       <div className="rounded-[18px] overflow-hidden"
@@ -1631,9 +1762,10 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [tab, setTab]               = useState('vaccini')
-  const [isPremium, setIsPremium]   = useState(false)
-  const [upgrading, setUpgrading]   = useState(false)
-  const [upgradeError, setUpgradeError] = useState('')
+  const [isSupporter, setIsSupporter]       = useState(false)
+  const [supporterExpires, setSupporterExpires] = useState(null)
+  const [upgrading, setUpgrading]           = useState(false)
+  const [upgradeError, setUpgradeError]     = useState('')
   const [showSuccess, setShowSuccess]   = useState(false)
   const [user, setUser]             = useState(null)
   const [dogName, setDogName]         = useState(null)
@@ -1656,10 +1788,13 @@ export default function Dashboard() {
     const name = meta.full_name || meta.name || u.email?.split('@')[0] || null
     setUserName(name)
     const [{ data: profile }, { data: dog }] = await Promise.all([
-      supabase.from('profiles').select('premium').eq('id', u.id).maybeSingle(),
+      supabase.from('profiles').select('supporter, supporter_expires').eq('id', u.id).maybeSingle(),
       supabase.from('dogs').select('name, breed, photo_url, weight, age_label, sex').eq('user_id', u.id).maybeSingle(),
     ])
-    if (profile) setIsPremium(!!profile.premium)
+    if (profile) {
+      setIsSupporter(!!profile.supporter)
+      setSupporterExpires(profile.supporter_expires || null)
+    }
     if (dog) {
       setDogId(dog.id)
       setDogName(dog.name)
@@ -1681,18 +1816,23 @@ export default function Dashboard() {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
 
-  // Ritorno da Stripe con ?upgraded=1
+  // Ritorno da Stripe con ?supporter=1
   useEffect(() => {
-    if (searchParams.get('upgraded') !== '1') return
+    if (searchParams.get('supporter') !== '1') return
     setSearchParams({}) // pulisce URL
-    // Aspetta il webhook (max 5s) poi ricarica il profilo
+    // Aspetta il webhook (max 6s) poi ricarica il profilo
     const poll = async () => {
       for (let i = 0; i < 5; i++) {
         await new Promise(r => setTimeout(r, 1200))
         const { data } = await supabase.from('profiles')
-          .select('premium').eq('id', (await supabase.auth.getUser()).data.user?.id ?? '')
+          .select('supporter, supporter_expires')
+          .eq('id', (await supabase.auth.getUser()).data.user?.id ?? '')
           .maybeSingle()
-        if (data?.premium) { setIsPremium(true); break }
+        if (data?.supporter) {
+          setIsSupporter(true)
+          setSupporterExpires(data.supporter_expires || null)
+          break
+        }
       }
       setShowSuccess(true)
       setTimeout(() => setShowSuccess(false), 5000)
@@ -1727,13 +1867,37 @@ export default function Dashboard() {
     }
   }
 
+  // Apre il portale Stripe per gestire l'abbonamento
+  const handleManageSubscription = async () => {
+    if (!user) return
+    try {
+      const { data: sessionData } = await supabase.auth.getSession()
+      const token = sessionData?.session?.access_token
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      )
+      const json = await res.json()
+      if (json.error) throw new Error(json.error)
+      window.location.href = json.url
+    } catch (err) {
+      console.error('Portale Stripe:', err.message)
+    }
+  }
+
   return (
     <AppShell>
       {/* Toast successo upgrade */}
       {showSuccess && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-btn text-sm font-semibold shadow-lg"
           style={{ backgroundColor: '#E8A859', color: '#FFFFFF', maxWidth: 360 }}>
-          🎉 Benvenuto in Bertie Premium!
+          Benvenuto nel club Supporter!
         </div>
       )}
 
@@ -1768,15 +1932,17 @@ export default function Dashboard() {
       <div className="flex-1 overflow-y-auto px-4 pb-28">
         {tab === 'vaccini'   && <SaluteView dogName={dogName} dogRazza={dogRazza} photoUrl={dogPhotoUrl} dogWeight={dogWeight} dogAge={dogAge} dogSex={dogSex} userName={userName} />}
         {tab === 'mappa'     && <MappaView />}
-        {tab === 'aivet'     && <AIVetView isPremium={isPremium} />}
+        {tab === 'aivet'     && <AIVetView isSupporter={isSupporter} />}
         {tab === 'diario'    && <LibrettoView dogName={dogName} dogId={dogId} />}
         {tab === 'accessori' && <AccessoriView dogName={dogName} dogRazza={dogRazza} />}
         {tab === 'profilo'   && (
           <ProfiloView
             navigate={navigate}
             user={user}
-            isPremium={isPremium}
+            isSupporter={isSupporter}
+            supporterExpires={supporterExpires}
             onUpgrade={handleUpgrade}
+            onManage={handleManageSubscription}
             upgrading={upgrading}
             upgradeError={upgradeError}
             dogName={dogName}
@@ -1787,15 +1953,15 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Google Display Ad — overlay sopra la nav, esclusi Shop e Mappa */}
+      {/* Banner ads — solo per non-supporter, esclusi Shop e Mappa */}
       {tab !== 'accessori' && tab !== 'mappa' && (
-        <GoogleAd slot="1111111111" />
+        <SupporterBanner isSupporter={isSupporter} onUpgrade={() => setTab('profilo')} />
       )}
 
       <BottomNav
         active={tab}
-        onChange={(t) => { if (t === 'aivet' && !isPremium) return; setTab(t) }}
-        isPremium={isPremium}
+        onChange={(t) => { if (t === 'aivet' && !isSupporter) return; setTab(t) }}
+        isPremium={isSupporter}
         notifiche={vaccini.filter(v => v.scaduto || v.giorni <= 30).length}
       />
     </AppShell>
