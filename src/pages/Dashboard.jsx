@@ -1353,7 +1353,7 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
         </div>
 
         {/* Nome + pill — destra */}
-        <div className="flex-1 relative z-10 min-w-0" style={{ paddingLeft: 6 }}>
+        <div className="flex-1 relative z-10 min-w-0" style={{ paddingLeft: 6, textAlign: 'center' }}>
           <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22,
             color: '#FFFFFF', lineHeight: 1.1, marginBottom: 2,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
