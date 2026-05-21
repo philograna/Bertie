@@ -1320,14 +1320,14 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
     <div className="flex flex-col gap-4 pb-4">
 
       {/* ── Dog hero card ── */}
-      <div className="rounded-[20px] px-4 py-4 flex items-center gap-5 relative overflow-hidden"
+      <div className="rounded-[20px] px-5 py-5 flex flex-col items-center gap-3 relative overflow-hidden"
         style={{ backgroundColor: '#E8A859', boxShadow: '0 8px 24px -8px rgba(232,168,89,.55)' }}>
         {/* bg decoration */}
         <div style={{ position: 'absolute', right: -40, bottom: -40, width: 160, height: 160,
           backgroundColor: 'rgba(255,255,255,0.10)', borderRadius: '50%', pointerEvents: 'none' }} />
 
-        {/* Avatar — sinistra */}
-        <div className="relative shrink-0">
+        {/* Avatar */}
+        <div className="relative">
           <div
             className="w-[72px] h-[72px] rounded-full overflow-hidden cursor-pointer"
             style={{ border: '2.5px solid rgba(255,255,255,0.65)', backgroundColor: '#F6ECC8' }}
@@ -1352,16 +1352,14 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
         </div>
 
-        {/* Nome + pill — destra */}
-        <div className="flex-1 relative z-10 min-w-0" style={{ paddingLeft: 6 }}>
+        {/* Nome + pill — centrati */}
+        <div className="relative z-10 text-center">
           <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22,
-            color: '#FFFFFF', lineHeight: 1.1, marginBottom: 2,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            color: '#FFFFFF', lineHeight: 1.1, marginBottom: 2 }}>
             {dogName || 'Il mio cane'}
           </p>
           {dogRazza && (
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.80)', marginBottom: 10,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.80)', marginBottom: 10 }}>
               {dogRazza}
             </p>
           )}
