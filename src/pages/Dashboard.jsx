@@ -1320,46 +1320,60 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
     <div className="flex flex-col gap-4 pb-4">
 
       {/* ── Dog hero card ── */}
-      <div className="rounded-[20px] px-5 py-5 flex flex-col items-center gap-3 relative overflow-hidden"
-        style={{ backgroundColor: '#E8A859', boxShadow: '0 8px 24px -8px rgba(232,168,89,.55)' }}>
+      <div style={{
+        backgroundColor: '#E8A859', boxShadow: '0 8px 24px -8px rgba(232,168,89,.55)',
+        borderRadius: 20, padding: '16px 20px',
+        position: 'relative', overflow: 'hidden',
+        display: 'flex', alignItems: 'center', minHeight: 100,
+      }}>
         {/* bg decoration */}
         <div style={{ position: 'absolute', right: -40, bottom: -40, width: 160, height: 160,
           backgroundColor: 'rgba(255,255,255,0.10)', borderRadius: '50%', pointerEvents: 'none' }} />
 
-        {/* Avatar */}
-        <div className="relative">
+        {/* Avatar — fisso a sinistra */}
+        <div style={{ position: 'relative', flexShrink: 0, zIndex: 2 }}>
           <div
-            className="w-[72px] h-[72px] rounded-full overflow-hidden cursor-pointer"
-            style={{ border: '2.5px solid rgba(255,255,255,0.65)', backgroundColor: '#F6ECC8' }}
+            style={{
+              width: 72, height: 72, borderRadius: '50%', overflow: 'hidden', cursor: 'pointer',
+              border: '2.5px solid rgba(255,255,255,0.65)', backgroundColor: '#F6ECC8',
+            }}
             onClick={() => fileRef.current?.click()}
           >
             {photoUrl
-              ? <img src={photoUrl} alt="foto cane" className="w-full h-full object-cover" />
-              : <img src="/bertie-logo.svg" alt="Bertie" className="w-full h-full object-contain" />
+              ? <img src={photoUrl} alt="foto cane" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <img src="/bertie-logo.svg" alt="Bertie" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             }
           </div>
           <button
             onClick={() => fileRef.current?.click()}
-            className="absolute bottom-0 right-0 w-6 h-6 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: '#2A2C2C', boxShadow: '0 2px 6px rgba(0,0,0,0.25)' }}
+            style={{
+              position: 'absolute', bottom: 0, right: 0,
+              width: 24, height: 24, borderRadius: '50%',
+              backgroundColor: '#2A2C2C', boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer',
+            }}
           >
             {uploading
-              ? <div className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin"
-                  style={{ borderColor: '#F6ECC8', borderTopColor: 'transparent' }} />
+              ? <div style={{ width: 12, height: 12, border: '2px solid #F6ECC8',
+                  borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
               : <Camera size={11} style={{ color: '#F6ECC8' }} />
             }
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
         </div>
 
-        {/* Nome + pill — centrati */}
-        <div className="relative z-10 text-center">
+        {/* Nome + pill — centrati sull'intera card */}
+        <div style={{
+          position: 'absolute', left: 0, right: 0,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+          zIndex: 1, pointerEvents: 'none',
+        }}>
           <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: 22,
-            color: '#FFFFFF', lineHeight: 1.1, marginBottom: 2 }}>
+            color: '#FFFFFF', lineHeight: 1.1, margin: 0 }}>
             {dogName || 'Il mio cane'}
           </p>
           {dogRazza && (
-            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.80)', marginBottom: 10 }}>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', margin: '2px 0 8px' }}>
               {dogRazza}
             </p>
           )}
@@ -1370,6 +1384,7 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
               backgroundColor: 'rgba(255,255,255,0.20)',
               border: '1px solid rgba(255,255,255,0.35)',
               borderRadius: 999, padding: '6px 14px', cursor: 'pointer',
+              pointerEvents: 'auto',
             }}
           >
             {dogName ? 'Modifica profilo' : '+ Aggiungi profilo'}
