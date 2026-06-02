@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
 import AppShell from '../components/AppShell'
 import { supabase } from '../lib/supabase'
+import { initNotifications } from '../lib/notifications'
 
 const RAZZE = [
   'Labrador Retriever', 'Golden Retriever', 'Pastore Tedesco', 'Bulldog Francese',
@@ -46,8 +47,10 @@ export default function Onboarding() {
   const cameraRef     = useRef(null)
 
   const [step, setStep]           = useState(1)
-  const [saving, setSaving]       = useState(false)
-  const [saveError, setSaveError] = useState('')
+  const [saving, setSaving]             = useState(false)
+  const [saveError, setSaveError]       = useState('')
+  const [notifLoading, setNotifLoading] = useState(false)
+  const [savedUserId, setSavedUserId]   = useState(null)
 
   const [dog, setDog] = useState({
     nome: '', razza: '', microchip: '',
@@ -121,6 +124,7 @@ export default function Onboarding() {
         .from('dogs')
         .upsert(payload, { onConflict: 'user_id', ignoreDuplicates: false })
       if (error) throw error
+      setSavedUserId(user.id)
       setStep(3)
     } catch (err) {
       console.error('Errore salvataggio:', err)
@@ -132,27 +136,29 @@ export default function Onboarding() {
 
   return (
     <AppShell>
-      <div className="flex-1 flex flex-col px-6 pt-14 pb-10" style={{ fontFamily: NUNITO, textAlign: 'center' }}>
+      <div className="flex-1 flex flex-col px-6 pb-10" style={{ fontFamily: NUNITO, textAlign: 'center', paddingTop: 'calc(env(safe-area-inset-top) + 24px)' }}>
 
-        {/* ── Step bar ── */}
-        <div className="flex items-center gap-3 mb-6">
-          {step > 1 && step < 3 && (
-            <button onClick={() => setStep(s => s - 1)}
-              className="w-9 h-9 flex items-center justify-center rounded-full"
-              style={{ backgroundColor: G.cream }}>
-              <ChevronLeft size={18} style={{ color: G.ink }} />
-            </button>
-          )}
-          <div className="flex-1">
-            <div className="flex gap-1.5 mb-3">
-              {[1, 2, 3].map(s => (
-                <div key={s} className="h-1.5 flex-1 rounded-full transition-all duration-300"
-                  style={{ backgroundColor: s <= step ? G.gold : G.cream200 }} />
-              ))}
+        {/* ── Step bar (nascosta negli step completamento) ── */}
+        {step < 3 && (
+          <div className="flex items-center gap-3 mb-6">
+            {step > 1 && (
+              <button onClick={() => setStep(s => s - 1)}
+                className="w-9 h-9 flex items-center justify-center rounded-full"
+                style={{ backgroundColor: G.cream }}>
+                <ChevronLeft size={18} style={{ color: G.ink }} />
+              </button>
+            )}
+            <div className="flex-1">
+              <div className="flex gap-1.5 mb-3">
+                {[1, 2].map(s => (
+                  <div key={s} className="h-1.5 flex-1 rounded-full transition-all duration-300"
+                    style={{ backgroundColor: s <= step ? G.gold : G.cream200 }} />
+                ))}
+              </div>
+              <p className="text-xs" style={{ color: G.ink500 }}>Passo {step} di 2</p>
             </div>
-            <p className="text-xs" style={{ color: G.ink500 }}>Passo {step} di 3</p>
           </div>
-        </div>
+        )}
 
         {/* ════════════════ STEP 1 ════════════════ */}
         {step === 1 && (
@@ -363,17 +369,64 @@ export default function Onboarding() {
               </p>
             </div>
             <p className="text-sm max-w-xs" style={{ color: G.ink500 }}>
-              Ora aggiungi i vaccini e attiva i reminder push — è gratuito.
+              Ora attiva i reminder — ti avvisiamo prima che scadano vaccini e antiparassitari.
             </p>
             <div className="w-full flex flex-col gap-3 mt-4">
-              <button onClick={() => navigate('/dashboard')}
+              <button onClick={() => setStep(4)}
                 className="w-full py-4 rounded-btn font-semibold text-base"
                 style={{ backgroundColor: G.gold, color: '#FFFFFF' }}>
-                Vai alla dashboard →
+                Attiva reminder →
               </button>
               <button onClick={() => navigate('/dashboard')}
                 className="text-sm font-medium" style={{ color: G.ink500 }}>
                 Farlo dopo
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════ STEP 4 — Notifiche ════════════════ */}
+        {step === 4 && (
+          <div className="flex flex-col items-center justify-center flex-1 text-center gap-5">
+            {/* Icona campanella */}
+            <div style={{ width: 80, height: 80, borderRadius: '50%',
+              backgroundColor: G.cream, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="38" height="38" viewBox="0 0 24 24" fill="none">
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2Z" fill={G.gold} />
+                <path d="M18 16v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2Z" fill={G.gold} />
+              </svg>
+            </div>
+
+            <div>
+              <h1 className="text-2xl font-extrabold mb-2" style={{ color: G.ink }}>
+                Attiva i reminder
+              </h1>
+              <p className="text-sm max-w-xs" style={{ color: G.ink500, lineHeight: 1.6 }}>
+                Ti avvisiamo 30 giorni prima che scada un vaccino e 7 giorni prima per gli antiparassitari.
+                Gratis, niente spam.
+              </p>
+            </div>
+
+            <div className="w-full flex flex-col gap-3 mt-4">
+              <button
+                onClick={async () => {
+                  setNotifLoading(true)
+                  const uid = savedUserId || (await supabase.auth.getUser()).data?.user?.id
+                  if (uid) await initNotifications(uid)
+                  setNotifLoading(false)
+                  navigate('/dashboard')
+                }}
+                disabled={notifLoading}
+                className="w-full py-4 rounded-btn font-semibold text-base flex items-center justify-center gap-2"
+                style={{ backgroundColor: G.gold, color: '#FFFFFF', opacity: notifLoading ? 0.7 : 1 }}>
+                {notifLoading && (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
+                {notifLoading ? 'Attivazione…' : 'Attiva reminder'}
+              </button>
+              <button onClick={() => navigate('/dashboard')}
+                className="text-sm font-medium" style={{ color: G.ink500 }}>
+                Forse dopo
               </button>
             </div>
           </div>

@@ -24,7 +24,7 @@ export default function Home() {
       >
 
         {/* ── Wordmark + hero come blocco unico ── */}
-        <div className="flex-1 flex flex-col items-center justify-start text-center px-6 pt-20 pb-4">
+        <div className="flex-1 flex flex-col items-center justify-start text-center px-6 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 32px)' }}>
 
           {/* Wordmark SVG */}
           <img
@@ -155,17 +155,13 @@ export default function Home() {
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex items-center justify-between px-6 py-3 shrink-0 mt-1"
+        <div className="flex items-center justify-center px-6 py-3 shrink-0 mt-1"
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: 10,
-            color: '#6B6E6E',
             textTransform: 'uppercase',
             letterSpacing: '0.10em',
           }}>
-          <span>
-            <span style={{ color: '#2A2C2C', fontWeight: 500 }}>7M+</span>{' '}cani in Italia
-          </span>
           <span style={{ color: '#464949', borderBottom: '1px dotted #A7A8A8', paddingBottom: 1, cursor: 'pointer' }}>
             Privacy
           </span>

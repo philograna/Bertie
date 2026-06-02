@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './lib/auth'
+import { AuthProvider, useAuth } from './lib/auth'
 import Home from './pages/Home'
 import Landing from './pages/Landing'
 import Auth from './pages/Auth'
@@ -9,12 +9,25 @@ import Notifiche from './pages/Notifiche'
 import Termini from './pages/Termini'
 import ProtectedRoute from './components/ProtectedRoute'
 
+// Redirect automatico alla dashboard se l'utente è già loggato
+function RootRedirect() {
+  const { user, loading } = useAuth()
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F6ECC8' }}>
+      <div className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin"
+        style={{ borderColor: '#E8A859', borderTopColor: 'transparent' }} />
+    </div>
+  )
+  if (user) return <Navigate to="/dashboard" replace />
+  return <Home />
+}
+
 export default function App() {
   return (
     <AuthProvider>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<RootRedirect />} />
         <Route path="/landing" element={<Landing />} />
         <Route path="/termini" element={<Termini />} />
         <Route path="/login" element={<Auth />} />

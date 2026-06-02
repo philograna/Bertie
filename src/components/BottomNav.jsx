@@ -31,7 +31,7 @@ export default function BottomNav({ active, onChange, isPremium, notifiche = 0 }
 
   return (
     <nav
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full border-t flex items-center justify-around px-1 pb-safe"
+      className="bottom-nav fixed bottom-0 left-1/2 -translate-x-1/2 w-full border-t flex items-center justify-around px-1 pb-safe"
       style={{
         maxWidth: 430,
         backgroundColor: '#F6ECC8',

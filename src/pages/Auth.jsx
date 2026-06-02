@@ -100,7 +100,7 @@ export default function Auth() {
 
   return (
     <AppShell>
-      <div className="flex-1 flex flex-col px-6 pt-14 pb-10" style={{ backgroundColor: G.cream }}>
+      <div className="flex-1 flex flex-col px-6 pb-10" style={{ backgroundColor: G.cream, paddingTop: 'calc(env(safe-area-inset-top) + 24px)' }}>
 
         {/* Logo + titolo */}
         <div className="mb-8">

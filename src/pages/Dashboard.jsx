@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, ChevronRight, Send, Lock, Syringe, MapPin, BookOpen, Dog, Camera, Bell, Shield, MessageCircle, LogOut, Trash2 } from 'lucide-react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
+import { Geolocation } from '@capacitor/geolocation'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { supabase } from '../lib/supabase'
@@ -371,8 +372,9 @@ function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, us
 }
 
 // ─── Sezione Mappa ──────────────────────────────────────────────────────────
-const MAX_KM = 1.5
+const MAX_KM = 5
 const PAGE = 6
+const DEFAULT_LOCATION = { lat: 45.4654, lng: 9.1859 } // Milano centro — fallback simulatore
 
 const FILTRI = [
   { id: 'tutti',        label: 'Tutti' },
@@ -384,48 +386,70 @@ const FILTRI = [
   { id: 'bar',          label: '☕ Bar' },
 ]
 
-// Endpoint Overpass con fallback automatico
+// Endpoint Overpass — chiamata diretta dal client (ATS aperto in Info.plist)
 const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
-  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.openstreetmap.ru/api/interpreter',
 ]
 
 async function fetchOverpass(query) {
+  const errors = []
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
       const ctrl = new AbortController()
-      const timer = setTimeout(() => ctrl.abort(), 12000)
-      const res = await fetch(`${endpoint}?data=${encodeURIComponent(query)}`, { signal: ctrl.signal })
+      const timer = setTimeout(() => ctrl.abort(), 25000)
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `data=${encodeURIComponent(query)}`,
+        signal: ctrl.signal,
+      })
       clearTimeout(timer)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       return await res.json()
-    } catch {
-      // prova il prossimo endpoint
+    } catch (err) {
+      errors.push(`${endpoint}: ${err?.message || err}`)
     }
   }
-  return { elements: [] }
+  throw new Error(errors.join(' | '))
 }
 
 function buildOverpassQuery(lat, lng, r) {
-  // Solo nodi (node) — le way non restituiscono lat/lon con out body
-  return `[out:json][timeout:10];
+  // node + way per ogni categoria: la maggior parte di parchi/spiagge/edifici
+  // in OSM sono way (poligoni). "out body center" restituisce il centroide
+  // di ogni way in el.center.lat / el.center.lon.
+  const around = `(around:${r},${lat},${lng})`
+  return `[out:json][timeout:25];
 (
-  node[leisure=dog_park](around:${r},${lat},${lng});
-  node[leisure=park](around:${r},${lat},${lng});
-  node[leisure=beach][dog~"^(yes|leashed)$"](around:${r},${lat},${lng});
-  node[natural=beach][dog~"^(yes|leashed)$"](around:${r},${lat},${lng});
-  node[amenity=veterinary](around:${r},${lat},${lng});
-  node[amenity=groomer](around:${r},${lat},${lng});
-  node[shop=pet_grooming](around:${r},${lat},${lng});
-  node[amenity=restaurant][dog~"^(yes|leashed)$"](around:${r},${lat},${lng});
-  node[amenity=restaurant][outdoor_seating=yes](around:${r},${lat},${lng});
-  node[amenity=bar][dog~"^(yes|leashed)$"](around:${r},${lat},${lng});
-  node[amenity=bar][outdoor_seating=yes](around:${r},${lat},${lng});
-  node[amenity=cafe][dog~"^(yes|leashed)$"](around:${r},${lat},${lng});
-  node[amenity=cafe][outdoor_seating=yes](around:${r},${lat},${lng});
+  node[leisure=dog_park]${around};
+  way[leisure=dog_park]${around};
+  node[leisure=park]${around};
+  way[leisure=park]${around};
+  node[leisure=beach]${around};
+  way[leisure=beach]${around};
+  node[natural=beach]${around};
+  way[natural=beach]${around};
+  node[amenity=veterinary]${around};
+  way[amenity=veterinary]${around};
+  node[amenity=groomer]${around};
+  way[amenity=groomer]${around};
+  node[shop=pet_grooming]${around};
+  way[shop=pet_grooming]${around};
+  node[amenity=restaurant][dog~"^(yes|leashed)$"]${around};
+  way[amenity=restaurant][dog~"^(yes|leashed)$"]${around};
+  node[amenity=restaurant][outdoor_seating=yes]${around};
+  way[amenity=restaurant][outdoor_seating=yes]${around};
+  node[amenity=bar][dog~"^(yes|leashed)$"]${around};
+  way[amenity=bar][dog~"^(yes|leashed)$"]${around};
+  node[amenity=bar][outdoor_seating=yes]${around};
+  way[amenity=bar][outdoor_seating=yes]${around};
+  node[amenity=cafe][dog~"^(yes|leashed)$"]${around};
+  way[amenity=cafe][dog~"^(yes|leashed)$"]${around};
+  node[amenity=cafe][outdoor_seating=yes]${around};
+  way[amenity=cafe][outdoor_seating=yes]${around};
 );
-out body;`
+out body center;`
 }
 
 function classifyElement(tags) {
@@ -543,14 +567,43 @@ function MappaView({ city: cityProp = '' }) {
   const [loading, setLoading] = useState(false)
   const [pagina, setPagina]   = useState(1)
   const [cityName, setCityName] = useState(cityProp)
+  const [debugInfo, setDebugInfo] = useState(null)
+  const [usingDefault, setUsingDefault] = useState(false)
 
   useEffect(() => {
-    if (!navigator.geolocation) { setGeoError(true); return }
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => setUserPos({ lat: coords.latitude, lng: coords.longitude }),
-      () => setGeoError(true),
-      { enableHighAccuracy: true, timeout: 8000 }
-    )
+    let cancelled = false
+    const getPos = async () => {
+      try {
+        // Controlla/richiedi permesso tramite plugin nativo Capacitor
+        let perm = await Geolocation.checkPermissions()
+        if (perm.location === 'prompt' || perm.location === 'prompt-with-rationale') {
+          perm = await Geolocation.requestPermissions()
+        }
+        if (perm.location === 'denied') {
+          if (!cancelled) { setUsingDefault(true); setUserPos(DEFAULT_LOCATION) }
+          return
+        }
+
+        const pos = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 15000,
+        })
+        if (!cancelled) setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+      } catch {
+        // Fallback a navigator.geolocation se il plugin non è disponibile (web)
+        if (!navigator.geolocation) {
+          if (!cancelled) { setUsingDefault(true); setUserPos(DEFAULT_LOCATION) }
+          return
+        }
+        navigator.geolocation.getCurrentPosition(
+          ({ coords }) => { if (!cancelled) setUserPos({ lat: coords.latitude, lng: coords.longitude }) },
+          () => { if (!cancelled) { setUsingDefault(true); setUserPos(DEFAULT_LOCATION) } },
+          { enableHighAccuracy: true, timeout: 15000 }
+        )
+      }
+    }
+    getPos()
+    return () => { cancelled = true }
   }, [])
 
   // Reverse geocoding per ricavare la città dai coords quando non è nel profilo
@@ -572,41 +625,53 @@ function MappaView({ city: cityProp = '' }) {
   useEffect(() => {
     if (!userPos) return
     setLoading(true)
+    setDebugInfo(null)
     const { lat, lng } = userPos
     const query = buildOverpassQuery(lat, lng, MAX_KM * 1000)
     fetchOverpass(query)
       .then(data => {
+        const rawCount = (data.elements || []).length
+        const proxyError = data.error || null
         const seen = new Set()
         const results = []
+        let noName = 0, noCoords = 0, noCategory = 0, tooFar = 0
         ;(data.elements || []).forEach(el => {
           const key = `${el.id}`
           if (seen.has(key)) return
           seen.add(key)
-          const nome = el.tags?.name
-          if (!nome) return
+          // Usa address o tipo come fallback se non c'è nome
+          const tagName = el.tags?.name
+          const tagStreet = el.tags?.['addr:street']
           const elLat = el.lat ?? el.center?.lat
           const elLng = el.lon ?? el.center?.lon
-          if (!elLat || !elLng) return
+          if (!elLat || !elLng) { noCoords++; return }
           const km = haversineKm(lat, lng, elLat, elLng)
-          if (km > MAX_KM) return
+          if (km > MAX_KM) { tooFar++; return }
           const cat = classifyElement(el.tags || {})
-          if (!cat) return
+          if (!cat) { noCategory++; return }
+          if (!tagName) { noName++ }
+          // Costruisci nome leggibile: tag name > indirizzo > categoria
+          const indirizzo = tagStreet
+            ? `${tagStreet} ${el.tags?.['addr:housenumber'] || ''}`.trim()
+            : ''
+          const nome = tagName || indirizzo || cat.tipo.charAt(0).toUpperCase() + cat.tipo.slice(1)
           results.push({
             id: key,
             tipo: cat.tipo,
             emoji: cat.emoji,
             nome,
-            indirizzo: el.tags?.['addr:street']
-              ? `${el.tags['addr:street']} ${el.tags['addr:housenumber'] || ''}`.trim()
-              : '',
+            indirizzo,
             km,
             lat: elLat,
             lng: elLng,
           })
         })
         setLuoghi(results.sort((a, b) => a.km - b.km))
+        setDebugInfo({ lat: lat.toFixed(4), lng: lng.toFixed(4), rawCount, found: results.length, noName, noCoords, noCategory, tooFar, proxyError })
       })
-      .catch(() => {})
+      .catch((err) => {
+        setDebugInfo({ lat: lat.toFixed(4), lng: lng.toFixed(4), rawCount: 0, found: 0, error: String(err?.message || err) })
+      })
       .finally(() => setLoading(false))
   }, [userPos])
 
@@ -620,6 +685,30 @@ function MappaView({ city: cityProp = '' }) {
 
   return (
     <div className="flex flex-col gap-3">
+
+      {/* ── Debug panel (visibile sempre per ora) ── */}
+      {debugInfo && (
+        <div style={{
+          backgroundColor: '#FBF6E2', border: '1px solid #EFE0A8',
+          borderRadius: 12, padding: '8px 12px',
+          fontFamily: 'var(--font-mono)', fontSize: 10,
+          color: '#8C5524', lineHeight: 1.6,
+        }}>
+          <div style={{ fontWeight: 700, marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            DEBUG MAPPA
+          </div>
+          <div>Coord: {debugInfo.lat}, {debugInfo.lng}</div>
+          {debugInfo.error
+            ? <div style={{ color: '#C1121F' }}>Errore fetch: {debugInfo.error}</div>
+            : <>
+                <div>Overpass raw: {debugInfo.rawCount} elementi</div>
+                <div>Trovati: {debugInfo.found} · senza nome: {debugInfo.noName} · senza coords: {debugInfo.noCoords}</div>
+                <div>No categoria: {debugInfo.noCategory} · troppo lontani: {debugInfo.tooFar}</div>
+                {debugInfo.proxyError && <div style={{ color: '#C1121F' }}>Proxy error: {debugInfo.proxyError}</div>}
+              </>
+          }
+        </div>
+      )}
 
       {/* ── Rover banner ── */}
       <RoverBanner city={cityName} />
@@ -654,9 +743,9 @@ function MappaView({ city: cityProp = '' }) {
         </div>
       )}
 
-      {geoError && (
-        <p className="text-xs font-medium px-1" style={{ color: '#6B6E6E' }}>
-          📍 Posizione non disponibile — attiva la geolocalizzazione
+      {usingDefault && (
+        <p className="text-xs font-medium px-1" style={{ color: '#B77336' }}>
+          📍 Posizione simulata: Milano centro
         </p>
       )}
 
@@ -1351,7 +1440,9 @@ function SupporterBanner({ isSupporter, onUpgrade }) {
   if (isSupporter) return null
   return (
     <div style={{
-      position: 'fixed', bottom: NAV_HEIGHT, left: '50%',
+      position: 'fixed',
+      bottom: `calc(${NAV_HEIGHT}px + env(safe-area-inset-bottom))`,
+      left: '50%',
       transform: 'translateX(-50%)',
       width: '100%', maxWidth: 430, zIndex: 40,
     }}>
@@ -2024,10 +2115,10 @@ export default function Dashboard() {
       {/* Top bar */}
       {tab === 'vaccini' ? (
         /* Home tab — solo safe-area, niente header visibile */
-        <div className="shrink-0 pt-12" style={{ backgroundColor: '#F6ECC8' }} />
+        <div className="shrink-0 pt-safe" style={{ backgroundColor: '#F6ECC8' }} />
       ) : (
         /* Altre tab — top bar stile handoff: solo titolo serif */
-        <header className="flex items-center px-5 pt-12 pb-3 shrink-0"
+        <header className="flex items-center px-5 pt-safe pb-3 shrink-0"
           style={{ backgroundColor: '#F6ECC8' }}>
           {PAGE_TITLES[tab] && (
             <h1 style={{
@@ -2049,7 +2140,7 @@ export default function Dashboard() {
       )}
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-28">
+      <div className="flex-1 overflow-y-auto px-4" style={{ paddingBottom: 'calc(160px + env(safe-area-inset-bottom))' }}>
         {tab === 'vaccini'   && <SaluteView dogName={dogName} dogRazza={dogRazza} photoUrl={dogPhotoUrl} dogWeight={dogWeight} dogAge={dogAge} dogSex={dogSex} userName={userName} />}
         {tab === 'mappa'     && <MappaView city={userCity} />}
         {tab === 'aivet'     && <AIVetView isSupporter={isSupporter} />}
