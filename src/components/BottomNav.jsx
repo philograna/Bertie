@@ -22,7 +22,7 @@ const ALL_TABS = [
   { id: 'aivet',     icon: Stethoscope, label: 'AI Vet',   premium: true  },
   { id: 'diario',    icon: BookOpen,    label: 'Libretto', premium: false },
   { id: 'accessori', icon: ShoppingBag, label: 'Shop',     premium: false },
-  { id: 'mappa',     icon: MapPin,      label: 'Mappa',    premium: false },
+  { id: 'mappa',     icon: MapPin,      label: 'Luoghi',   premium: false },
   { id: 'profilo',   icon: null,        label: 'Profilo',  premium: false, isLogo: true },
 ]
 

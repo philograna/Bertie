@@ -1,22 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, ChevronRight, Send, Lock, Syringe, MapPin, BookOpen, Dog, Camera, Bell, Shield, MessageCircle, LogOut, Trash2 } from 'lucide-react'
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
-import { Geolocation } from '@capacitor/geolocation'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
 import { supabase } from '../lib/supabase'
+import LuoghiView from './Luoghi'
 import AppShell from '../components/AppShell'
 import BottomNav from '../components/BottomNav'
 import GoogleAd from '../components/GoogleAd'
-
-// Fix leaflet default icon paths broken by bundlers
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-})
 
 // ─── Mock data ─────────────────────────────────────────────────────────────
 const vaccini = [
@@ -371,455 +360,9 @@ function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, us
   )
 }
 
-// ─── Sezione Mappa ──────────────────────────────────────────────────────────
-const MAX_KM = 5
-const PAGE = 6
-const DEFAULT_LOCATION = { lat: 45.4654, lng: 9.1859 } // Milano centro — fallback simulatore
+// ─── Sezione Mappa → delegata a LuoghiView ─────────────────────────────────
+// (componente standalone in src/pages/Luoghi.jsx)
 
-const FILTRI = [
-  { id: 'tutti',        label: 'Tutti' },
-  { id: 'parco',        label: '🌳 Parchi' },
-  { id: 'spiaggia',     label: '🏖️ Spiagge' },
-  { id: 'veterinario',  label: '🩺 Veterinari' },
-  { id: 'toelettatore', label: '🛁 Toelettatori' },
-  { id: 'ristorante',   label: '🍽️ Ristoranti' },
-  { id: 'bar',          label: '☕ Bar' },
-]
-
-// Endpoint Overpass — chiamata diretta dal client (ATS aperto in Info.plist)
-const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
-  'https://overpass.openstreetmap.ru/api/interpreter',
-]
-
-async function fetchOverpass(query) {
-  const errors = []
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const ctrl = new AbortController()
-      const timer = setTimeout(() => ctrl.abort(), 25000)
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `data=${encodeURIComponent(query)}`,
-        signal: ctrl.signal,
-      })
-      clearTimeout(timer)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      return await res.json()
-    } catch (err) {
-      errors.push(`${endpoint}: ${err?.message || err}`)
-    }
-  }
-  throw new Error(errors.join(' | '))
-}
-
-function buildOverpassQuery(lat, lng, r) {
-  // node + way per ogni categoria: la maggior parte di parchi/spiagge/edifici
-  // in OSM sono way (poligoni). "out body center" restituisce il centroide
-  // di ogni way in el.center.lat / el.center.lon.
-  const around = `(around:${r},${lat},${lng})`
-  return `[out:json][timeout:25];
-(
-  node[leisure=dog_park]${around};
-  way[leisure=dog_park]${around};
-  node[leisure=park]${around};
-  way[leisure=park]${around};
-  node[leisure=beach]${around};
-  way[leisure=beach]${around};
-  node[natural=beach]${around};
-  way[natural=beach]${around};
-  node[amenity=veterinary]${around};
-  way[amenity=veterinary]${around};
-  node[amenity=groomer]${around};
-  way[amenity=groomer]${around};
-  node[shop=pet_grooming]${around};
-  way[shop=pet_grooming]${around};
-  node[amenity=restaurant][dog~"^(yes|leashed)$"]${around};
-  way[amenity=restaurant][dog~"^(yes|leashed)$"]${around};
-  node[amenity=restaurant][outdoor_seating=yes]${around};
-  way[amenity=restaurant][outdoor_seating=yes]${around};
-  node[amenity=bar][dog~"^(yes|leashed)$"]${around};
-  way[amenity=bar][dog~"^(yes|leashed)$"]${around};
-  node[amenity=bar][outdoor_seating=yes]${around};
-  way[amenity=bar][outdoor_seating=yes]${around};
-  node[amenity=cafe][dog~"^(yes|leashed)$"]${around};
-  way[amenity=cafe][dog~"^(yes|leashed)$"]${around};
-  node[amenity=cafe][outdoor_seating=yes]${around};
-  way[amenity=cafe][outdoor_seating=yes]${around};
-);
-out body center;`
-}
-
-function classifyElement(tags) {
-  if (tags.leisure === 'dog_park' || tags.leisure === 'park')             return { tipo: 'parco',        emoji: '🌳' }
-  if (tags.leisure === 'beach'    || tags.natural === 'beach')            return { tipo: 'spiaggia',     emoji: '🏖️' }
-  if (tags.amenity === 'veterinary')                                      return { tipo: 'veterinario',  emoji: '🩺' }
-  if (tags.amenity === 'groomer'  || tags.shop === 'pet_grooming')        return { tipo: 'toelettatore', emoji: '🛁' }
-  if (tags.amenity === 'restaurant')                                      return { tipo: 'ristorante',   emoji: '🍽️' }
-  if (tags.amenity === 'bar'      || tags.amenity === 'cafe')             return { tipo: 'bar',          emoji: '☕' }
-  return null
-}
-
-function haversineKm(lat1, lng1, lat2, lng2) {
-  const R = 6371
-  const dLat = ((lat2 - lat1) * Math.PI) / 180
-  const dLng = ((lng2 - lng1) * Math.PI) / 180
-  const a = Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLng / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-}
-
-function RecenterMap({ pos }) {
-  const map = useMap()
-  useEffect(() => { if (pos) map.setView([pos.lat, pos.lng], 15) }, [pos, map])
-  return null
-}
-
-const userIcon = L.divIcon({
-  className: '',
-  html: '<div style="width:16px;height:16px;border-radius:50%;background:#0067e5;border:3px solid #fff;box-shadow:0 0 0 2px #0067e5"></div>',
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
-})
-
-const ROVER_AFFILIATE = import.meta.env.VITE_ROVER_AFFILIATE_ID || ''
-
-function buildRoverLink(city) {
-  const base = 'https://www.rover.com/it/search/'
-  const params = new URLSearchParams({
-    location: city || 'Italia',
-    utm_source: 'bertie',
-    ...(ROVER_AFFILIATE ? { ref: ROVER_AFFILIATE } : {}),
-  })
-  return `${base}?${params.toString()}`
-}
-
-function RoverBanner({ city }) {
-  return (
-    <div>
-      <div
-        onClick={() => window.open(buildRoverLink(city), '_blank')}
-        style={{
-          backgroundColor: '#E8A859',
-          borderRadius: 14,
-          margin: '0 0 0 0',
-          padding: '12px 14px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          cursor: 'pointer',
-          userSelect: 'none',
-        }}
-      >
-        {/* Sinistra: icona + testi */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 24, flexShrink: 0 }}>🐾</span>
-          <div style={{ minWidth: 0 }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', margin: 0, lineHeight: 1.2 }}>
-              Cerchi un dog sitter?
-            </p>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', margin: '2px 0 0', lineHeight: 1.3 }}>
-              Sitter verificati vicino a te con Rover
-            </p>
-          </div>
-        </div>
-
-        {/* Destra: bottone */}
-        <button
-          onClick={e => { e.stopPropagation(); window.open(buildRoverLink(city), '_blank') }}
-          style={{
-            backgroundColor: '#FFFFFF',
-            color: '#E8A859',
-            fontWeight: 700,
-            fontSize: 13,
-            border: 'none',
-            borderRadius: 999,
-            padding: '7px 14px',
-            cursor: 'pointer',
-            flexShrink: 0,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          Cerca →
-        </button>
-      </div>
-
-      {/* Disclaimer */}
-      <p style={{
-        fontSize: 9, color: '#A7A8A8', textAlign: 'right',
-        margin: '3px 4px 0', fontFamily: 'var(--font-mono)',
-        textTransform: 'uppercase', letterSpacing: '0.06em',
-      }}>
-        Powered by Rover.com
-      </p>
-    </div>
-  )
-}
-
-function MappaView({ city: cityProp = '' }) {
-  const [filtro, setFiltro]   = useState('tutti')
-  const [userPos, setUserPos] = useState(null)
-  const [geoError, setGeoError] = useState(false)
-  const [luoghi, setLuoghi]   = useState([])
-  const [loading, setLoading] = useState(false)
-  const [pagina, setPagina]   = useState(1)
-  const [cityName, setCityName] = useState(cityProp)
-  const [debugInfo, setDebugInfo] = useState(null)
-  const [usingDefault, setUsingDefault] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    const getPos = async () => {
-      try {
-        // Controlla/richiedi permesso tramite plugin nativo Capacitor
-        let perm = await Geolocation.checkPermissions()
-        if (perm.location === 'prompt' || perm.location === 'prompt-with-rationale') {
-          perm = await Geolocation.requestPermissions()
-        }
-        if (perm.location === 'denied') {
-          if (!cancelled) { setUsingDefault(true); setUserPos(DEFAULT_LOCATION) }
-          return
-        }
-
-        const pos = await Geolocation.getCurrentPosition({
-          enableHighAccuracy: true,
-          timeout: 15000,
-        })
-        if (!cancelled) setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-      } catch {
-        // Fallback a navigator.geolocation se il plugin non è disponibile (web)
-        if (!navigator.geolocation) {
-          if (!cancelled) { setUsingDefault(true); setUserPos(DEFAULT_LOCATION) }
-          return
-        }
-        navigator.geolocation.getCurrentPosition(
-          ({ coords }) => { if (!cancelled) setUserPos({ lat: coords.latitude, lng: coords.longitude }) },
-          () => { if (!cancelled) { setUsingDefault(true); setUserPos(DEFAULT_LOCATION) } },
-          { enableHighAccuracy: true, timeout: 15000 }
-        )
-      }
-    }
-    getPos()
-    return () => { cancelled = true }
-  }, [])
-
-  // Reverse geocoding per ricavare la città dai coords quando non è nel profilo
-  useEffect(() => {
-    if (cityProp) { setCityName(cityProp); return }
-    if (!userPos) return
-    fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userPos.lat}&lon=${userPos.lng}`,
-      { headers: { 'Accept-Language': 'it' } }
-    )
-      .then(r => r.json())
-      .then(d => {
-        const c = d.address?.city || d.address?.town || d.address?.village || ''
-        if (c) setCityName(c)
-      })
-      .catch(() => {})
-  }, [userPos, cityProp])
-
-  useEffect(() => {
-    if (!userPos) return
-    setLoading(true)
-    setDebugInfo(null)
-    const { lat, lng } = userPos
-    const query = buildOverpassQuery(lat, lng, MAX_KM * 1000)
-    fetchOverpass(query)
-      .then(data => {
-        const rawCount = (data.elements || []).length
-        const proxyError = data.error || null
-        const seen = new Set()
-        const results = []
-        let noName = 0, noCoords = 0, noCategory = 0, tooFar = 0
-        ;(data.elements || []).forEach(el => {
-          const key = `${el.id}`
-          if (seen.has(key)) return
-          seen.add(key)
-          // Usa address o tipo come fallback se non c'è nome
-          const tagName = el.tags?.name
-          const tagStreet = el.tags?.['addr:street']
-          const elLat = el.lat ?? el.center?.lat
-          const elLng = el.lon ?? el.center?.lon
-          if (!elLat || !elLng) { noCoords++; return }
-          const km = haversineKm(lat, lng, elLat, elLng)
-          if (km > MAX_KM) { tooFar++; return }
-          const cat = classifyElement(el.tags || {})
-          if (!cat) { noCategory++; return }
-          if (!tagName) { noName++ }
-          // Costruisci nome leggibile: tag name > indirizzo > categoria
-          const indirizzo = tagStreet
-            ? `${tagStreet} ${el.tags?.['addr:housenumber'] || ''}`.trim()
-            : ''
-          const nome = tagName || indirizzo || cat.tipo.charAt(0).toUpperCase() + cat.tipo.slice(1)
-          results.push({
-            id: key,
-            tipo: cat.tipo,
-            emoji: cat.emoji,
-            nome,
-            indirizzo,
-            km,
-            lat: elLat,
-            lng: elLng,
-          })
-        })
-        setLuoghi(results.sort((a, b) => a.km - b.km))
-        setDebugInfo({ lat: lat.toFixed(4), lng: lng.toFixed(4), rawCount, found: results.length, noName, noCoords, noCategory, tooFar, proxyError })
-      })
-      .catch((err) => {
-        setDebugInfo({ lat: lat.toFixed(4), lng: lng.toFixed(4), rawCount: 0, found: 0, error: String(err?.message || err) })
-      })
-      .finally(() => setLoading(false))
-  }, [userPos])
-
-  useEffect(() => { setPagina(1) }, [filtro])
-
-  const visibili = luoghi.filter(l => filtro === 'tutti' || l.tipo === filtro)
-  const visibiliPaginati = visibili.slice(0, pagina * PAGE)
-  const hasMore = visibiliPaginati.length < visibili.length
-
-  const defaultCenter = [41.9028, 12.4964]
-
-  return (
-    <div className="flex flex-col gap-3">
-
-      {/* ── Debug panel (visibile sempre per ora) ── */}
-      {debugInfo && (
-        <div style={{
-          backgroundColor: '#FBF6E2', border: '1px solid #EFE0A8',
-          borderRadius: 12, padding: '8px 12px',
-          fontFamily: 'var(--font-mono)', fontSize: 10,
-          color: '#8C5524', lineHeight: 1.6,
-        }}>
-          <div style={{ fontWeight: 700, marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            DEBUG MAPPA
-          </div>
-          <div>Coord: {debugInfo.lat}, {debugInfo.lng}</div>
-          {debugInfo.error
-            ? <div style={{ color: '#C1121F' }}>Errore fetch: {debugInfo.error}</div>
-            : <>
-                <div>Overpass raw: {debugInfo.rawCount} elementi</div>
-                <div>Trovati: {debugInfo.found} · senza nome: {debugInfo.noName} · senza coords: {debugInfo.noCoords}</div>
-                <div>No categoria: {debugInfo.noCategory} · troppo lontani: {debugInfo.tooFar}</div>
-                {debugInfo.proxyError && <div style={{ color: '#C1121F' }}>Proxy error: {debugInfo.proxyError}</div>}
-              </>
-          }
-        </div>
-      )}
-
-      {/* ── Rover banner ── */}
-      <RoverBanner city={cityName} />
-
-      {/* ── Mappa ── */}
-      {!userPos && !geoError ? (
-        <div className="h-48 rounded-[20px] flex flex-col items-center justify-center gap-2"
-          style={{ backgroundColor: '#EFE0A8' }}>
-          <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: '#B77336', borderTopColor: 'transparent' }} />
-          <p className="text-xs font-medium" style={{ color: '#8C5524' }}>Rilevando posizione…</p>
-        </div>
-      ) : (
-        <div style={{ height: 210, borderRadius: 20, overflow: 'hidden',
-          boxShadow: '0 1px 0 rgba(0,0,0,.02), 0 12px 28px -18px rgba(140,85,36,.28)' }}>
-          <MapContainer
-            center={userPos ? [userPos.lat, userPos.lng] : defaultCenter}
-            zoom={15}
-            style={{ height: '100%', width: '100%' }}
-            zoomControl={false}
-            attributionControl={false}
-          >
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            {userPos && <RecenterMap pos={userPos} />}
-            {userPos && <Marker position={[userPos.lat, userPos.lng]} icon={userIcon} />}
-            {visibili.map(l => (
-              <Marker key={l.id} position={[l.lat, l.lng]}>
-                <Popup>{l.emoji} <strong>{l.nome}</strong><br />{l.km.toFixed(2)} km</Popup>
-              </Marker>
-            ))}
-          </MapContainer>
-        </div>
-      )}
-
-      {usingDefault && (
-        <p className="text-xs font-medium px-1" style={{ color: '#B77336' }}>
-          📍 Posizione simulata: Milano centro
-        </p>
-      )}
-
-      {/* ── Chip filtri ── */}
-      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-        {FILTRI.map(f => (
-          <button
-            key={f.id}
-            onClick={() => setFiltro(f.id)}
-            className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-pill transition-colors"
-            style={filtro === f.id
-              ? { backgroundColor: '#2A2C2C', color: '#F6ECC8', border: '1px solid #2A2C2C' }
-              : { backgroundColor: 'rgba(255,255,255,0.7)', color: '#464949', border: '1px solid rgba(70,73,73,0.10)' }}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Loading ── */}
-      {loading && (
-        <div className="flex items-center justify-center gap-2 py-6">
-          <div className="w-4 h-4 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: '#E8A859', borderTopColor: 'transparent' }} />
-          <p className="text-xs font-medium" style={{ color: '#6B6E6E' }}>
-            Cerco luoghi nelle vicinanze…
-          </p>
-        </div>
-      )}
-
-      {/* ── Lista risultati ── */}
-      {!loading && (
-        <div className="flex flex-col gap-2">
-          {visibili.length === 0 && userPos && (
-            <div className="flex flex-col items-center py-10 gap-2">
-              <span style={{ fontSize: 36 }}>🐾</span>
-              <p className="text-sm font-semibold" style={{ color: '#2A2C2C' }}>Nessun luogo trovato</p>
-              <p className="text-xs" style={{ color: '#6B6E6E' }}>Entro {MAX_KM} km · prova un'altra categoria</p>
-            </div>
-          )}
-          {visibiliPaginati.map(l => (
-            <div key={l.id}
-              className="flex items-center justify-between px-4 py-3.5 rounded-[16px]"
-              style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: '#FBF6E2', fontSize: 20 }}>
-                  {l.emoji}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: '#2A2C2C' }}>{l.nome}</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#6B6E6E' }}>
-                    {l.indirizzo ? `${l.indirizzo} · ` : ''}{l.km.toFixed(2)} km
-                  </p>
-                </div>
-              </div>
-              <ChevronRight size={14} style={{ color: '#A7A8A8' }} />
-            </div>
-          ))}
-          {hasMore && (
-            <button
-              onClick={() => setPagina(p => p + 1)}
-              className="w-full py-3 rounded-[16px] text-xs font-semibold"
-              style={{ backgroundColor: 'rgba(255,255,255,0.5)', color: '#6B6E6E',
-                border: '1px dashed rgba(70,73,73,0.18)' }}
-            >
-              Mostra altri ({visibili.length - visibiliPaginati.length} rimasti)
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
 
 // ─── Sezione AI Vet ─────────────────────────────────────────────────────────
 function AIVetView({ isSupporter }) {
@@ -1734,115 +1277,227 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
 }
 
 // ─── Sezione Accessori ──────────────────────────────────────────────────────
-const AMAZON_TAG    = import.meta.env.VITE_AMAZON_AFFILIATE_TAG    || 'bertie-21'
-const ARCAPLANET_ID = import.meta.env.VITE_ARCAPLANET_AFFILIATE_ID || 'bertie001'
+// ─── Shop — Amazon affiliate ────────────────────────────────────────────────
+const AMAZON_TAG = import.meta.env.VITE_AMAZON_AFFILIATE_TAG || 'bertie-21'
 
 const CATEGORIE_ACC = [
   { id: 'tutti',         label: 'Tutti' },
-  { id: 'alimentazione', label: 'Alimentazione' },
-  { id: 'passeggiata',   label: 'Passeggiata' },
-  { id: 'gioco',         label: 'Gioco' },
-  { id: 'casa',          label: 'Casa' },
-  { id: 'salute',        label: 'Salute' },
+  { id: 'alimentazione', label: '🥩 Cibo' },
+  { id: 'passeggiata',   label: '🦮 Passeggiata' },
+  { id: 'gioco',         label: '🎾 Gioco' },
+  { id: 'casa',          label: '🏠 Casa' },
+  { id: 'salute',        label: '💊 Salute' },
+  { id: 'igiene',        label: '🛁 Igiene' },
 ]
 
-const PRODOTTI_MOCK = [
-  { id: 1, cat: 'passeggiata',   nome: 'Pettorina ergonomica',       perche: 'Distribuisce la trazione sul petto · 25–30 kg.', prezzo: '€24,90', prezzoOld: '€32,90', deal: '-24%', fonte: 'amazon',     razze: ['Labrador','Tutti'] },
-  { id: 2, cat: 'alimentazione', nome: 'Adult Medium 12 kg',         perche: 'Cani di taglia media, 3–7 anni.',                prezzo: '€39,90', prezzoOld: null,      deal: null,   fonte: 'arcaplanet', razze: ['Tutti'] },
-  { id: 3, cat: 'casa',          nome: 'Memory foam ortopedica',     perche: 'Sfoderabile, lavabile a 30°.',                   prezzo: '€69,00', prezzoOld: '€89,00',  deal: null,   fonte: 'amazon',     razze: ['Tutti'] },
-  { id: 4, cat: 'alimentazione', nome: 'Bocconcini al pollo',        perche: '250 g · per addestramento.',                    prezzo: '€6,49',  prezzoOld: null,      deal: null,   fonte: 'arcaplanet', razze: ['Tutti'] },
-  { id: 5, cat: 'salute',        nome: 'Frontline Combo Spot-On L',  perche: 'Protezione pulci e zecche 4 settimane.',         prezzo: '€18,90', prezzoOld: null,      deal: null,   fonte: 'amazon',     razze: ['Tutti'] },
-  { id: 6, cat: 'gioco',         nome: 'Kong Classic misura L',      perche: 'Resistente al morso forte.',                    prezzo: '€12,50', prezzoOld: null,      deal: null,   fonte: 'amazon',     razze: ['Tutti'] },
-  { id: 7, cat: 'passeggiata',   nome: 'Guinzaglio retrattile 5 m',  perche: 'Freno ergonomico, nastro 5 m.',                 prezzo: '€14,99', prezzoOld: null,      deal: null,   fonte: 'amazon',     razze: ['Tutti'] },
-  { id: 8, cat: 'salute',        nome: 'Advantix 25–40 kg',          perche: '4 pipette spot-on.',                            prezzo: '€22,40', prezzoOld: null,      deal: null,   fonte: 'arcaplanet', razze: ['Tutti'] },
-]
-
-function buildAffiliateUrl(fonte, nome) {
-  if (fonte === 'amazon')
-    return `https://www.amazon.it/s?k=${encodeURIComponent(nome)}&tag=${AMAZON_TAG}`
-  return `https://www.arcaplanet.it/search?query=${encodeURIComponent(nome)}&ref=${ARCAPLANET_ID}`
+function amazonProductUrl(asin, name, brand, searchQuery) {
+  // Se c'è una search_query specifica nel DB la usa, altrimenti costruisce dalla ricerca + "cane"
+  const q = encodeURIComponent(searchQuery || `${brand ? brand + ' ' : ''}${name} cane`)
+  return `https://www.amazon.it/s?k=${q}&tag=${AMAZON_TAG}`
 }
 
-// Placeholder image con pattern a trattini (come nel handoff)
-function ProdImg({ label, fonte, deal, liked, onLike }) {
+const CAT_BG = {
+  alimentazione: '#FFF3E6',
+  passeggiata:   '#E6F4F0',
+  gioco:         '#FFFBE6',
+  casa:          '#EEE6FF',
+  salute:        '#E8F8E8',
+  igiene:        '#E6EEFF',
+}
+
+function amazonImgUrl(asin) {
+  // Formato jacket image Amazon — funziona senza PA API
+  return `https://m.media-amazon.com/images/P/${asin}.01.LZZZZZZZ.jpg`
+}
+
+// Card compatta — usata sia nel feed orizzontale che nella griglia
+function ProdCard({ p, liked, onLike, width }) {
+  const bg = CAT_BG[p.category] || '#FBF6E2'
+  const [imgOk, setImgOk] = useState(true)
+
   return (
-    <div className="relative" style={{ aspectRatio: '1/1', backgroundColor: '#FBF6E2',
-      backgroundImage: 'repeating-linear-gradient(135deg, rgba(183,115,54,0.14) 0 6px, transparent 6px 14px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {/* Source badge */}
-      <span className="absolute top-2 left-2 text-[9px] font-bold px-2 py-1 rounded-pill"
-        style={fonte === 'amazon'
-          ? { backgroundColor: '#2A2C2C', color: '#E8A859' }
-          : { backgroundColor: '#E8A859', color: '#2A2C2C' }}>
-        {fonte === 'amazon' ? 'Amazon' : 'Arcaplanet'}
-      </span>
-      {/* Like */}
-      <button onClick={onLike}
-        className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center"
-        style={{ backgroundColor: 'rgba(255,255,255,0.9)' }}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill={liked ? '#E8A859' : 'none'}
-          stroke={liked ? '#E8A859' : '#464949'} strokeWidth="2">
-          <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
-        </svg>
-      </button>
-      {/* Deal badge */}
-      {deal && (
-        <span className="absolute bottom-2 left-2 text-[9px] font-bold px-2 py-1 rounded-[6px]"
-          style={{ backgroundColor: '#2A2C2C', color: '#F6ECC8' }}>{deal}</span>
-      )}
-      {/* Label */}
-      <span className="text-[9px] font-medium px-2 py-1 rounded-[6px]"
-        style={{ backgroundColor: '#F6ECC8', color: '#8C5524', fontFamily: 'var(--font-mono, monospace)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        {label}
-      </span>
+    <a
+      href={amazonProductUrl(p.asin, p.name, p.brand, p.search_query)}
+      target="_blank" rel="noopener noreferrer"
+      className="flex flex-col rounded-[16px] overflow-hidden active:opacity-70 transition-opacity"
+      style={{ ...(width ? { width, flexShrink: 0 } : {}), backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)', textDecoration: 'none' }}
+    >
+      {/* Immagine prodotto */}
+      <div style={{ height: 110, backgroundColor: bg, display: 'flex', alignItems: 'center',
+        justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+        {(p.image_url || imgOk) ? (
+          <img
+            src={p.image_url || amazonImgUrl(p.asin)}
+            alt={p.name}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 8 }}
+            onError={() => setImgOk(false)}
+          />
+        ) : (
+          // Fallback testo se immagine non disponibile
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#B77336', textAlign: 'center',
+            padding: '0 8px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
+            letterSpacing: '0.06em', lineHeight: 1.4 }}>
+            {p.brand || p.category}
+          </p>
+        )}
+        {/* Badge categoria */}
+        <span className="absolute bottom-1.5 left-2 text-[8px] font-bold px-1.5 py-0.5 rounded-pill"
+          style={{ backgroundColor: '#E8A859', color: '#FFFFFF' }}>
+          {p.category.charAt(0).toUpperCase() + p.category.slice(1)}
+        </span>
+        {/* Like */}
+        <button
+          onClick={e => { e.preventDefault(); onLike() }}
+          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(255,255,255,0.9)' }}>
+          <svg width="11" height="11" viewBox="0 0 24 24"
+            fill={liked ? '#E8A859' : 'none'}
+            stroke={liked ? '#E8A859' : '#464949'} strokeWidth="2.5">
+            <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* Testo */}
+      <div className="p-2.5 flex flex-col gap-1 flex-1">
+        <p style={{ fontSize: 9, color: '#B77336', textTransform: 'uppercase',
+          letterSpacing: '0.08em', fontFamily: 'monospace', fontWeight: 700 }}>
+          {p.brand || ''}
+        </p>
+        <p style={{ fontSize: 12, fontWeight: 600, color: '#2A2C2C', lineHeight: 1.2,
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {p.name}
+        </p>
+        <div className="flex items-center justify-between mt-auto pt-1.5"
+          style={{ borderTop: '1px solid #F6ECC8' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#2A2C2C' }}>
+            {p.price_label || '—'}
+          </span>
+          <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
+            style={{ backgroundColor: '#E8A859' }}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </a>
+  )
+}
+
+function SkeletonProd({ height = 110 }) {
+  return (
+    <div className="flex flex-col rounded-[16px] overflow-hidden"
+      style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
+      <div className="animate-pulse" style={{ height, backgroundColor: '#F0EAD6' }} />
+      <div className="p-2.5 flex flex-col gap-1.5">
+        <div className="h-2 rounded-full animate-pulse w-1/2" style={{ backgroundColor: '#F6ECC8' }} />
+        <div className="h-3 rounded-full animate-pulse w-full" style={{ backgroundColor: '#F0EAD6' }} />
+        <div className="h-2.5 rounded-full animate-pulse w-1/2" style={{ backgroundColor: '#F6ECC8' }} />
+      </div>
     </div>
   )
 }
 
-function AccessoriView({ dogName, dogRazza }) {
+// Determina taglia da peso (kg)
+function weightRange(kg) {
+  if (!kg) return 'tutti'
+  const n = parseFloat(kg)
+  if (n < 10) return 'piccola'
+  if (n <= 25) return 'media'
+  return 'grande'
+}
+
+// Seleziona 4-6 prodotti personalizzati bilanciando le categorie
+function selectFeatured(prodotti, range) {
+  const priorità = ['salute', 'alimentazione', 'passeggiata', 'gioco', 'casa', 'igiene']
+  const byCategory = {}
+  prodotti.forEach(p => {
+    if (p.weight_range === range || p.weight_range === 'tutti') {
+      if (!byCategory[p.category]) byCategory[p.category] = []
+      byCategory[p.category].push(p)
+    }
+  })
+  const result = []
+  for (const cat of priorità) {
+    if (byCategory[cat]?.length) result.push(byCategory[cat][0])
+    if (result.length >= 6) break
+  }
+  return result
+}
+
+function AccessoriView({ dogName, dogRazza, dogWeight, dogAge }) {
   const [catFiltro, setCatFiltro] = useState('tutti')
   const [search, setSearch]       = useState('')
   const [liked, setLiked]         = useState({})
+  const [prodotti, setProdotti]   = useState([])
+  const [loading, setLoading]     = useState(true)
 
-  const prodotti = PRODOTTI_MOCK.filter(p => {
-    const catOk    = catFiltro === 'tutti' || p.cat === catFiltro
-    const razzaOk  = !dogRazza || p.razze.includes('Tutti') || p.razze.includes(dogRazza)
-    const searchOk = !search || p.nome.toLowerCase().includes(search.toLowerCase())
-    return catOk && razzaOk && searchOk
+  const taglia = weightRange(dogWeight)
+  const featured = selectFeatured(prodotti, taglia)
+
+  useEffect(() => {
+    supabase
+      .from('products')
+      .select('*')
+      .eq('active', true)
+      .order('category')
+      .then(({ data }) => { setProdotti(data || []); setLoading(false) })
+  }, [])
+
+  const visibili = prodotti.filter(p => {
+    const catOk    = catFiltro === 'tutti' || p.category === catFiltro
+    const searchOk = !search || p.name.toLowerCase().includes(search.toLowerCase())
+    return catOk && searchOk
   })
-
-  // Hero contestuale: mostra se c'è un antipar. in scadenza entro 7 giorni
-  const antiparInArrivo = vaccini.find(v => !v.scaduto && v.giorni <= 7)
 
   return (
     <div className="flex flex-col gap-0 -mx-4">
 
-      {/* ── Card personalizzazione ── */}
-      <div className="mx-4 mt-2 mb-3 px-3 py-3 rounded-[16px] flex items-center gap-3"
-        style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
-        <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shrink-0"
-          style={{ backgroundColor: '#F6ECC8' }}>
-          <img src="/bertie-logo.svg" alt="" className="w-full h-full object-contain" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p style={{ fontSize: 9, fontWeight: 700, color: '#6B6E6E', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono, monospace)' }}>
-            Scelti per
-          </p>
-          <p className="text-sm font-medium truncate" style={{ color: '#2A2C2C' }}>
-            {dogName || 'Bertie'}{' '}
-            <span style={{ color: '#6B6E6E', fontWeight: 400 }}>
-              {dogRazza ? `· ${dogRazza}` : ''}
-            </span>
-          </p>
-        </div>
-        <span style={{ fontSize: 10, fontWeight: 700, color: '#B77336', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'var(--font-mono, monospace)' }}>
-          Cambia
-        </span>
-      </div>
+      {/* ── Feed personalizzato ── */}
+      {(loading || featured.length > 0) && (
+        <div className="mx-4 mt-2 mb-4">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
+                color: '#B77336', textTransform: 'uppercase', letterSpacing: '0.10em' }}>
+                Scelti per
+              </p>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20,
+                color: '#2A2C2C', letterSpacing: '-0.02em', lineHeight: 1.1, margin: 0 }}>
+                {dogName || 'il tuo cane'}
+                {dogRazza && <em style={{ color: '#D28C45', fontStyle: 'italic' }}> · {dogRazza}</em>}
+              </h3>
+            </div>
+            {taglia !== 'tutti' && (
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-pill"
+                style={{ backgroundColor: '#FBF6E2', color: '#B77336' }}>
+                Taglia {taglia}
+              </span>
+            )}
+          </div>
 
-      {/* ── Search ── */}
+          {/* Scroll orizzontale */}
+          <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+            {loading
+              ? [1,2,3,4].map(i => <SkeletonProd key={i} height={110} />)
+              : featured.map(p => (
+                  <ProdCard key={p.id} p={p} width={140}
+                    liked={!!liked[p.id]}
+                    onLike={() => setLiked(l => ({ ...l, [p.id]: !l[p.id] }))} />
+                ))
+            }
+          </div>
+        </div>
+      )}
+
+      {/* Divider */}
+      <div className="mx-4 mb-3" style={{ height: 1, backgroundColor: '#EFE0A8' }} />
+
+      {/* Search */}
       <div className="mx-4 mb-3 px-3 py-2.5 rounded-[14px] flex items-center gap-2.5"
-        style={{ backgroundColor: 'rgba(255,255,255,0.5)', border: '1px solid rgba(70,73,73,0.08)' }}>
+        style={{ backgroundColor: 'rgba(255,255,255,0.7)', border: '1px solid rgba(70,73,73,0.08)' }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6E6E" strokeWidth="2">
           <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
         </svg>
@@ -1855,7 +1510,7 @@ function AccessoriView({ dogName, dogRazza }) {
         />
       </div>
 
-      {/* ── Chip filtri ── */}
+      {/* Filtri */}
       <div className="flex gap-2 px-4 pb-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
         {CATEGORIE_ACC.map(c => (
           <button key={c.id} onClick={() => setCatFiltro(c.id)}
@@ -1868,89 +1523,30 @@ function AccessoriView({ dogName, dogRazza }) {
         ))}
       </div>
 
-      {/* ── Hero contestuale ── */}
-      {antiparInArrivo && (
-        <div className="mx-4 mb-4 p-4 rounded-[20px] flex gap-3 items-center relative overflow-hidden"
-          style={{ backgroundColor: '#E8A859' }}>
-          <div style={{ position: 'absolute', right: -30, top: -30, width: 140, height: 140,
-            backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: '50%', pointerEvents: 'none' }} />
-          <div className="flex-1 relative z-10">
-            <span className="text-[9px] font-bold px-2 py-1 rounded-pill mb-2 inline-block"
-              style={{ backgroundColor: 'rgba(42,44,44,0.5)', color: '#F6ECC8', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
-              Consigliato · scade tra {antiparInArrivo.giorni}gg
-            </span>
-            <h3 className="font-display text-white mb-1" style={{ fontSize: 20, lineHeight: 1.1 }}>
-              L'<em>antiparassitario</em><br />di {dogName || 'Bertie'} è in arrivo.
-            </h3>
-            <p className="text-xs mb-2.5" style={{ color: 'rgba(255,255,255,0.9)' }}>Pipette spot-on per cani 20–40 kg.</p>
-            <span className="text-xs font-semibold px-3 py-1.5 rounded-pill inline-flex items-center gap-1"
-              style={{ backgroundColor: '#FFFFFF', color: '#D28C45' }}>
-              Riacquista · €24,50 →
-            </span>
-          </div>
-          <div className="shrink-0 w-20 h-20 rounded-[18px] flex items-center justify-center relative z-10"
-            style={{ backgroundColor: '#F6ECC8',
-              backgroundImage: 'repeating-linear-gradient(135deg, rgba(183,115,54,0.18) 0 6px, transparent 6px 14px)',
-              fontFamily: 'monospace', fontSize: 9, color: '#8C5524', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-            Pipette
-          </div>
-        </div>
-      )}
-
-      {/* ── Section header ── */}
-      <div className="flex justify-end px-4 mb-2">
-        <span style={{ fontSize: 9, fontWeight: 700, color: '#B77336', textTransform: 'uppercase', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
-          Vedi tutti →
-        </span>
-      </div>
-
-      {/* ── Griglia prodotti ── */}
+      {/* Griglia 2 colonne — stesso stile del feed */}
       <div className="grid grid-cols-2 gap-2.5 px-4 pb-2">
-        {prodotti.map(p => (
-          <div key={p.id} className="flex flex-col rounded-[16px] overflow-hidden"
-            style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
-            <ProdImg
-              label={p.nome.split(' ')[0]}
-              fonte={p.fonte}
-              deal={p.deal}
-              liked={!!liked[p.id]}
-              onLike={() => setLiked(l => ({ ...l, [p.id]: !l[p.id] }))}
-            />
-            <div className="p-3 flex flex-col gap-1 flex-1">
-              <p style={{ fontSize: 9, color: '#6B6E6E', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'monospace' }}>
-                {p.cat.charAt(0).toUpperCase() + p.cat.slice(1)}
-              </p>
-              <p className="font-display" style={{ fontSize: 16, lineHeight: 1.15, letterSpacing: '-0.005em', color: '#2A2C2C' }}>
-                {p.nome}
-              </p>
-              <p style={{ fontSize: 11, color: '#6B6E6E', lineHeight: 1.35 }}>{p.perche}</p>
-              <div className="flex items-center justify-between mt-auto pt-2">
-                <div className="font-display" style={{ fontSize: 16, color: '#2A2C2C', display: 'flex', gap: 5, alignItems: 'baseline' }}>
-                  {p.prezzo}
-                  {p.prezzoOld && (
-                    <s style={{ fontFamily: 'var(--font-sans)', fontSize: 10, color: '#A7A8A8', fontStyle: 'normal' }}>
-                      {p.prezzoOld}
-                    </s>
-                  )}
-                </div>
-                <a href={buildAffiliateUrl(p.fonte, p.nome)} target="_blank" rel="noopener noreferrer"
-                  className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: '#E8A859' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
-                    <path d="M12 5v14M5 12h14"/>
-                  </svg>
-                </a>
-              </div>
-            </div>
-          </div>
+        {loading ? (
+          [1,2,3,4,5,6].map(i => <SkeletonProd key={i} />)
+        ) : visibili.map(p => (
+          <ProdCard key={p.id} p={p}
+            liked={!!liked[p.id]}
+            onLike={() => setLiked(l => ({ ...l, [p.id]: !l[p.id] }))} />
         ))}
       </div>
 
-      {/* ── Disclaimer ── */}
-      <div className="mx-4 mb-4 mt-1 px-3 py-2.5 rounded-[12px]"
+      {!loading && visibili.length === 0 && (
+        <div className="flex flex-col items-center py-10 gap-2 mx-4">
+          <span style={{ fontSize: 36 }}>🛍️</span>
+          <p className="text-sm font-semibold" style={{ color: '#2A2C2C' }}>Nessun prodotto trovato</p>
+        </div>
+      )}
+
+      {/* Disclaimer affiliazione */}
+      <div className="mx-4 mb-4 mt-2 px-3 py-2.5 rounded-[12px]"
         style={{ border: '1px dashed rgba(70,73,73,0.18)', backgroundColor: 'rgba(255,255,255,0.5)' }}>
         <p style={{ fontSize: 9, color: '#6B6E6E', lineHeight: 1.4, fontFamily: 'monospace', letterSpacing: '0.02em' }}>
-          Bertie può ricevere una commissione sugli acquisti effettuati tramite questi link. Il prezzo per te non cambia.</p>
+          Bertie partecipa al Programma Affiliazione Amazon. I prezzi possono variare. Il prezzo per te non cambia.
+        </p>
       </div>
 
     </div>
@@ -1960,7 +1556,7 @@ function AccessoriView({ dogName, dogRazza }) {
 // ─── Layout principale ──────────────────────────────────────────────────────
 // Titoli in stile handoff: Instrument Serif 26px, parte finale in corsivo oro
 const PAGE_TITLES = {
-  mappa:     { pre: 'Map',    post: 'pa'   },
+  mappa:     { pre: 'Luo',    post: 'ghi'  },
   aivet:     { pre: 'AI ',    post: 'Vet'  },
   diario:    { pre: 'Libret', post: 'to'   },
   accessori: { pre: 'Acces',  post: 'sori' },
@@ -2142,10 +1738,10 @@ export default function Dashboard() {
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-4" style={{ paddingBottom: 'calc(160px + env(safe-area-inset-bottom))' }}>
         {tab === 'vaccini'   && <SaluteView dogName={dogName} dogRazza={dogRazza} photoUrl={dogPhotoUrl} dogWeight={dogWeight} dogAge={dogAge} dogSex={dogSex} userName={userName} />}
-        {tab === 'mappa'     && <MappaView city={userCity} />}
+        {tab === 'mappa'     && <LuoghiView city={userCity} />}
         {tab === 'aivet'     && <AIVetView isSupporter={isSupporter} />}
         {tab === 'diario'    && <LibrettoView dogName={dogName} dogId={dogId} />}
-        {tab === 'accessori' && <AccessoriView dogName={dogName} dogRazza={dogRazza} />}
+        {tab === 'accessori' && <AccessoriView dogName={dogName} dogRazza={dogRazza} dogWeight={dogWeight} dogAge={dogAge} />}
         {tab === 'profilo'   && (
           <ProfiloView
             navigate={navigate}
