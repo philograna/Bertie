@@ -1,5 +1,8 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/auth'
+import { Capacitor } from '@capacitor/core'
+import { AdMob } from '@capacitor-community/admob'
 import Home from './pages/Home'
 import Landing from './pages/Landing'
 import Auth from './pages/Auth'
@@ -23,6 +26,11 @@ function RootRedirect() {
 }
 
 export default function App() {
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    AdMob.initialize({ requestTrackingAuthorization: true, initializeForTesting: true })
+  }, [])
+
   return (
     <AuthProvider>
     <BrowserRouter>

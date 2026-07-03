@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
+import { AdMob, BannerAdSize, BannerAdPosition, BannerAdPluginEvents } from '@capacitor-community/admob'
 import { Plus, ChevronRight, Send, Syringe, MapPin, Camera, Bell, Shield, MessageCircle, LogOut, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import LuoghiView from './Luoghi'
@@ -1401,6 +1403,7 @@ export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [tab, setTab]               = useState('vaccini')
   const [isSupporter, setIsSupporter]           = useState(true)
+  const [bannerHeight, setBannerHeight]         = useState(0)
   const [supporterExpires, setSupporterExpires] = useState(null)
   const [userCity, setUserCity]                 = useState('')
   const [upgrading, setUpgrading]           = useState(false)
@@ -1447,6 +1450,32 @@ export default function Dashboard() {
 
   // Carica al mount
   useEffect(() => { loadUser() }, [])
+
+  // Banner AdMob
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    let sizeListener
+
+    const showAd = async () => {
+      sizeListener = await AdMob.addListener(
+        BannerAdPluginEvents.SizeChanged,
+        ({ height }) => setBannerHeight(height ?? 50),
+      )
+      await AdMob.showBanner({
+        adId: 'ca-app-pub-3940256099942544/2934735716',
+        adSize: BannerAdSize.ADAPTIVE_BANNER,
+        position: BannerAdPosition.BOTTOM_CENTER,
+        margin: 0,
+        isTesting: true,
+      })
+    }
+    showAd()
+
+    return () => {
+      sizeListener?.remove()
+      AdMob.removeBanner()
+    }
+  }, [])
 
   // Ricarica ogni volta che la pagina torna visibile (es. ritorno dall'onboarding)
   useEffect(() => {
@@ -1568,7 +1597,7 @@ export default function Dashboard() {
       )}
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto px-4" style={{ paddingBottom: 'calc(160px + env(safe-area-inset-bottom))' }}>
+      <div className="flex-1 overflow-y-auto px-4" style={{ paddingBottom: `calc(160px + ${bannerHeight}px + env(safe-area-inset-bottom))` }}>
         {tab === 'vaccini'   && <SaluteView dogName={dogName} dogRazza={dogRazza} photoUrl={dogPhotoUrl} dogWeight={dogWeight} dogAge={dogAge} dogSex={dogSex} userName={userName} />}
         {tab === 'mappa'     && <LuoghiView city={userCity} />}
         {tab === 'aivet'     && <AIVetView isSupporter={isSupporter} />}
@@ -1597,6 +1626,7 @@ export default function Dashboard() {
         onChange={(t) => setTab(t)}
         isPremium={true}
         notifiche={vaccini.filter(v => v.scaduto || v.giorni <= 30).length}
+        bannerOffset={bannerHeight}
       />
     </AppShell>
   )

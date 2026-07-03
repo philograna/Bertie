@@ -26,13 +26,14 @@ const ALL_TABS = [
   { id: 'profilo',   icon: null,        label: 'Profilo',  premium: false, isLogo: true },
 ]
 
-export default function BottomNav({ active, onChange, isPremium, notifiche = 0 }) {
+export default function BottomNav({ active, onChange, isPremium, notifiche = 0, bannerOffset = 0 }) {
   const TABS = ALL_TABS.filter(t => !t.premium || isPremium)
 
   return (
     <nav
-      className="bottom-nav fixed bottom-0 left-1/2 -translate-x-1/2 w-full border-t flex items-center justify-around px-1 pb-safe"
+      className="bottom-nav fixed left-1/2 -translate-x-1/2 w-full border-t flex items-center justify-around px-1 pb-safe"
       style={{
+        bottom: bannerOffset,
         maxWidth: 430,
         backgroundColor: '#F6ECC8',
         borderColor: '#EFE0A8',
