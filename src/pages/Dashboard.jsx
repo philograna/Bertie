@@ -1290,10 +1290,9 @@ const CATEGORIE_ACC = [
   { id: 'igiene',        label: '🛁 Igiene' },
 ]
 
-function amazonProductUrl(asin, name, brand, searchQuery) {
-  // Se c'è una search_query specifica nel DB la usa, altrimenti costruisce dalla ricerca + "cane"
-  const q = encodeURIComponent(searchQuery || `${brand ? brand + ' ' : ''}${name} cane`)
-  return `https://www.amazon.it/s?k=${q}&tag=${AMAZON_TAG}`
+function getAmazonLink(name, brand) {
+  const query = encodeURIComponent(`${brand ? brand + ' ' : ''}${name}`)
+  return `https://www.amazon.it/s?k=${query}&tag=${AMAZON_TAG}`
 }
 
 const CAT_BG = {
@@ -1305,76 +1304,56 @@ const CAT_BG = {
   igiene:        '#E6EEFF',
 }
 
-function amazonImgUrl(asin) {
-  // Formato jacket image Amazon — funziona senza PA API
-  return `https://m.media-amazon.com/images/P/${asin}.01.LZZZZZZZ.jpg`
-}
 
-// Card compatta — usata sia nel feed orizzontale che nella griglia
+// Card compatta — solo testo, nessuna immagine (v1 pre-PA API)
 function ProdCard({ p, liked, onLike, width }) {
   const bg = CAT_BG[p.category] || '#FBF6E2'
-  const [imgOk, setImgOk] = useState(true)
 
   return (
     <a
-      href={amazonProductUrl(p.asin, p.name, p.brand, p.search_query)}
+      href={getAmazonLink(p.name, p.brand)}
       target="_blank" rel="noopener noreferrer"
       className="flex flex-col rounded-[16px] overflow-hidden active:opacity-70 transition-opacity"
       style={{ ...(width ? { width, flexShrink: 0 } : {}), backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)', textDecoration: 'none' }}
     >
-      {/* Immagine prodotto */}
-      <div style={{ height: 110, backgroundColor: bg, display: 'flex', alignItems: 'center',
-        justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-        {(p.image_url || imgOk) ? (
-          <img
-            src={p.image_url || amazonImgUrl(p.asin)}
-            alt={p.name}
-            style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 8 }}
-            onError={() => setImgOk(false)}
-          />
-        ) : (
-          // Fallback testo se immagine non disponibile
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#B77336', textAlign: 'center',
-            padding: '0 8px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
-            letterSpacing: '0.06em', lineHeight: 1.4 }}>
-            {p.brand || p.category}
-          </p>
-        )}
-        {/* Badge categoria */}
-        <span className="absolute bottom-1.5 left-2 text-[8px] font-bold px-1.5 py-0.5 rounded-pill"
-          style={{ backgroundColor: '#E8A859', color: '#FFFFFF' }}>
-          {p.category.charAt(0).toUpperCase() + p.category.slice(1)}
+      {/* Header colorato con badge categoria + like */}
+      <div style={{ height: 56, backgroundColor: bg, position: 'relative',
+        display: 'flex', alignItems: 'flex-end', padding: '0 10px 8px' }}>
+        <span style={{ fontSize: 8, fontWeight: 700, color: '#B77336',
+          textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'monospace' }}>
+          {p.category}
         </span>
-        {/* Like */}
         <button
           onClick={e => { e.preventDefault(); onLike() }}
-          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(255,255,255,0.9)' }}>
+          className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(255,255,255,0.85)' }}>
           <svg width="11" height="11" viewBox="0 0 24 24"
             fill={liked ? '#E8A859' : 'none'}
-            stroke={liked ? '#E8A859' : '#464949'} strokeWidth="2.5">
+            stroke={liked ? '#E8A859' : '#B77336'} strokeWidth="2.5">
             <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
           </svg>
         </button>
       </div>
 
-      {/* Testo */}
-      <div className="p-2.5 flex flex-col gap-1 flex-1">
+      {/* Testo — altezza fissa per allineamento prezzi nella griglia */}
+      <div style={{ padding: '10px 10px 10px', display: 'flex', flexDirection: 'column',
+        height: 110, boxSizing: 'border-box' }}>
         <p style={{ fontSize: 9, color: '#B77336', textTransform: 'uppercase',
-          letterSpacing: '0.08em', fontFamily: 'monospace', fontWeight: 700 }}>
+          letterSpacing: '0.08em', fontFamily: 'monospace', fontWeight: 700, marginBottom: 3 }}>
           {p.brand || ''}
         </p>
-        <p style={{ fontSize: 12, fontWeight: 600, color: '#2A2C2C', lineHeight: 1.2,
-          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <p style={{ fontSize: 12, fontWeight: 600, color: '#2A2C2C', lineHeight: 1.25,
+          flexGrow: 1, overflow: 'hidden',
+          display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' }}>
           {p.name}
         </p>
-        <div className="flex items-center justify-between mt-auto pt-1.5"
-          style={{ borderTop: '1px solid #F6ECC8' }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#2A2C2C' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderTop: '1px solid #F6ECC8', paddingTop: 6, marginTop: 'auto' }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#2A2C2C' }}>
             {p.price_label || '—'}
           </span>
-          <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-            style={{ backgroundColor: '#E8A859' }}>
+          <div style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: '#E8A859',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
               <path d="M5 12h14M13 6l6 6-6 6"/>
             </svg>
@@ -1385,46 +1364,21 @@ function ProdCard({ p, liked, onLike, width }) {
   )
 }
 
-function SkeletonProd({ height = 110 }) {
+function SkeletonProd() {
   return (
     <div className="flex flex-col rounded-[16px] overflow-hidden"
       style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
-      <div className="animate-pulse" style={{ height, backgroundColor: '#F0EAD6' }} />
+      <div className="animate-pulse" style={{ height: 56, backgroundColor: '#F0EAD6' }} />
       <div className="p-2.5 flex flex-col gap-1.5">
         <div className="h-2 rounded-full animate-pulse w-1/2" style={{ backgroundColor: '#F6ECC8' }} />
         <div className="h-3 rounded-full animate-pulse w-full" style={{ backgroundColor: '#F0EAD6' }} />
-        <div className="h-2.5 rounded-full animate-pulse w-1/2" style={{ backgroundColor: '#F6ECC8' }} />
+        <div className="h-3 rounded-full animate-pulse w-3/4" style={{ backgroundColor: '#F0EAD6' }} />
+        <div className="h-4 rounded-full animate-pulse w-1/3 mt-1" style={{ backgroundColor: '#F6ECC8' }} />
       </div>
     </div>
   )
 }
 
-// Determina taglia da peso (kg)
-function weightRange(kg) {
-  if (!kg) return 'tutti'
-  const n = parseFloat(kg)
-  if (n < 10) return 'piccola'
-  if (n <= 25) return 'media'
-  return 'grande'
-}
-
-// Seleziona 4-6 prodotti personalizzati bilanciando le categorie
-function selectFeatured(prodotti, range) {
-  const priorità = ['salute', 'alimentazione', 'passeggiata', 'gioco', 'casa', 'igiene']
-  const byCategory = {}
-  prodotti.forEach(p => {
-    if (p.weight_range === range || p.weight_range === 'tutti') {
-      if (!byCategory[p.category]) byCategory[p.category] = []
-      byCategory[p.category].push(p)
-    }
-  })
-  const result = []
-  for (const cat of priorità) {
-    if (byCategory[cat]?.length) result.push(byCategory[cat][0])
-    if (result.length >= 6) break
-  }
-  return result
-}
 
 function AccessoriView({ dogName, dogRazza, dogWeight, dogAge }) {
   const [catFiltro, setCatFiltro] = useState('tutti')
@@ -1432,9 +1386,6 @@ function AccessoriView({ dogName, dogRazza, dogWeight, dogAge }) {
   const [liked, setLiked]         = useState({})
   const [prodotti, setProdotti]   = useState([])
   const [loading, setLoading]     = useState(true)
-
-  const taglia = weightRange(dogWeight)
-  const featured = selectFeatured(prodotti, taglia)
 
   useEffect(() => {
     supabase
@@ -1453,47 +1404,6 @@ function AccessoriView({ dogName, dogRazza, dogWeight, dogAge }) {
 
   return (
     <div className="flex flex-col gap-0 -mx-4">
-
-      {/* ── Feed personalizzato ── */}
-      {(loading || featured.length > 0) && (
-        <div className="mx-4 mt-2 mb-4">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
-                color: '#B77336', textTransform: 'uppercase', letterSpacing: '0.10em' }}>
-                Scelti per
-              </p>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20,
-                color: '#2A2C2C', letterSpacing: '-0.02em', lineHeight: 1.1, margin: 0 }}>
-                {dogName || 'il tuo cane'}
-                {dogRazza && <em style={{ color: '#D28C45', fontStyle: 'italic' }}> · {dogRazza}</em>}
-              </h3>
-            </div>
-            {taglia !== 'tutti' && (
-              <span className="text-[10px] font-bold px-2.5 py-1 rounded-pill"
-                style={{ backgroundColor: '#FBF6E2', color: '#B77336' }}>
-                Taglia {taglia}
-              </span>
-            )}
-          </div>
-
-          {/* Scroll orizzontale */}
-          <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-            {loading
-              ? [1,2,3,4].map(i => <SkeletonProd key={i} height={110} />)
-              : featured.map(p => (
-                  <ProdCard key={p.id} p={p} width={140}
-                    liked={!!liked[p.id]}
-                    onLike={() => setLiked(l => ({ ...l, [p.id]: !l[p.id] }))} />
-                ))
-            }
-          </div>
-        </div>
-      )}
-
-      {/* Divider */}
-      <div className="mx-4 mb-3" style={{ height: 1, backgroundColor: '#EFE0A8' }} />
 
       {/* Search */}
       <div className="mx-4 mb-3 px-3 py-2.5 rounded-[14px] flex items-center gap-2.5"
@@ -1536,7 +1446,6 @@ function AccessoriView({ dogName, dogRazza, dogWeight, dogAge }) {
 
       {!loading && visibili.length === 0 && (
         <div className="flex flex-col items-center py-10 gap-2 mx-4">
-          <span style={{ fontSize: 36 }}>🛍️</span>
           <p className="text-sm font-semibold" style={{ color: '#2A2C2C' }}>Nessun prodotto trovato</p>
         </div>
       )}
