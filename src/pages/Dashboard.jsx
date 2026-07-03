@@ -1164,7 +1164,7 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
           {
             Icon: MessageCircle, label: 'Feedback', sub: 'Aiutaci a migliorare Bertie',
             color: '#2E7D52', bg: '#F0FBF4',
-            action: () => window.open('mailto:feedback@bertie.app', '_blank'),
+            action: () => window.open('mailto:feedback@bertie.it', '_blank'),
           },
           {
             Icon: LogOut, label: 'Esci', sub: null,
