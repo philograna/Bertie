@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/auth'
 import { Capacitor } from '@capacitor/core'
 import { AdMob } from '@capacitor-community/admob'
+import { App as CapApp } from '@capacitor/app'
+import { Browser } from '@capacitor/browser'
+import { supabase } from './lib/supabase'
 import Home from './pages/Home'
 import Landing from './pages/Landing'
 import Auth from './pages/Auth'
@@ -29,6 +32,14 @@ export default function App() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
     AdMob.initialize({ requestTrackingAuthorization: true, initializeForTesting: true })
+
+    const listener = CapApp.addListener('appUrlOpen', async ({ url }) => {
+      if (!url.startsWith('it.bertie.app://auth/callback')) return
+      const { error } = await supabase.auth.exchangeCodeForSession(url)
+      if (!error) Browser.close()
+    })
+
+    return () => { listener.then(l => l.remove()) }
   }, [])
 
   return (

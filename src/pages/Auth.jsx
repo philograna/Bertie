@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import AppShell from '../components/AppShell'
+import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
 
 const G = {
   gold:    '#E8A859',
@@ -79,12 +81,24 @@ export default function Auth() {
 
   const handleGoogle = async () => {
     setGoogleLoading(true); setError('')
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/dashboard` },
-    })
-    if (error) { setError(error.message); setGoogleLoading(false) }
-    // in caso di successo il browser fa redirect automatico
+    if (Capacitor.isNativePlatform()) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: 'it.bertie.app://auth/callback',
+          skipBrowserRedirect: true,
+        },
+      })
+      if (error) { setError(error.message); setGoogleLoading(false); return }
+      await Browser.open({ url: data.url })
+      setGoogleLoading(false)
+    } else {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/dashboard` },
+      })
+      if (error) { setError(error.message); setGoogleLoading(false) }
+    }
   }
 
   const handleForgotPassword = async () => {

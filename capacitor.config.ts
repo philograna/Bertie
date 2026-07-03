@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.bertie.app',
+  appId: 'it.bertie.app',
   appName: 'Bertie',
   webDir: 'dist',
   ios: {
