@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, ChevronRight, Send, Lock, Syringe, MapPin, BookOpen, Dog, Camera, Bell, Shield, MessageCircle, LogOut, Trash2 } from 'lucide-react'
+import { Plus, ChevronRight, Send, Syringe, MapPin, Camera, Bell, Shield, MessageCircle, LogOut, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import LuoghiView from './Luoghi'
 import AppShell from '../components/AppShell'
@@ -371,74 +371,6 @@ function AIVetView({ isSupporter }) {
   ])
   const [input, setInput] = useState('')
   const [count, setCount] = useState(0)
-
-  if (!isSupporter) {
-    return (
-      <div className="flex flex-col gap-5 pb-4">
-
-        {/* Hero gate */}
-        <div className="rounded-[22px] p-6 flex flex-col items-center gap-4 text-center relative overflow-hidden"
-          style={{ backgroundColor: '#2A2C2C' }}>
-          {/* decorative circle */}
-          <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180,
-            backgroundColor: 'rgba(232,168,89,0.10)', borderRadius: '50%', pointerEvents: 'none' }} />
-          <div className="w-16 h-16 rounded-[18px] flex items-center justify-center shrink-0"
-            style={{ backgroundColor: 'rgba(232,168,89,0.15)' }}>
-            <Lock size={28} style={{ color: '#E8A859' }} />
-          </div>
-          <div>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#E8A859',
-              textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
-              Premium · €0,99/mese
-            </p>
-            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: '#FFFFFF',
-              letterSpacing: '-0.015em', lineHeight: 1.1, margin: '0 0 8px' }}>
-              AI <em>Veterinario</em>
-            </h3>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
-              Descrivi i sintomi del tuo cane e ricevi una valutazione immediata.
-            </p>
-          </div>
-        </div>
-
-        {/* Feature list */}
-        <div className="rounded-[18px] overflow-hidden"
-          style={{ backgroundColor: '#FFFFFF', boxShadow: 'var(--shadow-soft)' }}>
-          {[
-            { icon: '🩺', label: 'AI Veterinario', sub: '10 domande al mese' },
-            { icon: '🛁', label: 'Prenota groomer', sub: 'Dog sitter e toelettatori vicino a te' },
-            { icon: '🛂', label: 'Passaporto EU',   sub: 'Digitale, per viaggiare con il tuo cane' },
-            { icon: '🐾', label: 'Community locale',sub: 'Passeggiate di gruppo e amici a 4 zampe' },
-            { icon: '🐶', label: 'Animali illimitati', sub: 'Aggiungi tutti i tuoi cani' },
-          ].map((f, i, arr) => (
-            <div key={f.label} className="flex items-center gap-3 px-4 py-3"
-              style={{ borderBottom: i < arr.length - 1 ? '1px solid #F6ECC8' : 'none' }}>
-              <div className="w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 text-base"
-                style={{ backgroundColor: '#FBF6E2' }}>{f.icon}</div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold" style={{ color: '#2A2C2C' }}>{f.label}</p>
-                <p className="text-xs" style={{ color: '#6B6E6E' }}>{f.sub}</p>
-              </div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E8A859" strokeWidth="2.5">
-                <path d="M20 6L9 17l-5-5"/>
-              </svg>
-            </div>
-          ))}
-        </div>
-
-        {/* CTA */}
-        <button className="w-full py-4 rounded-pill font-semibold text-sm"
-          style={{ backgroundColor: '#E8A859', color: '#FFFFFF',
-            boxShadow: '0 8px 20px -6px rgba(232,168,89,0.55)' }}>
-          ⭐ Attiva Premium — €0,99/mese
-        </button>
-        <p className="text-center text-xs" style={{ color: '#A7A8A8', marginTop: -8 }}>
-          Annulla in qualsiasi momento
-        </p>
-
-      </div>
-    )
-  }
 
   const send = () => {
     if (!input.trim() || count >= 10) return
@@ -1149,14 +1081,6 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
                   : 'Abbonamento attivo'}
               </p>
             </div>
-            <button onClick={onManage} style={{
-              fontSize: 12, fontWeight: 600, color: '#FFFFFF',
-              backgroundColor: 'rgba(255,255,255,0.22)',
-              border: '1px solid rgba(255,255,255,0.35)',
-              borderRadius: 999, padding: '7px 14px', cursor: 'pointer', flexShrink: 0,
-            }}>
-              Gestisci
-            </button>
           </div>
         </div>
       ) : (
@@ -1235,7 +1159,7 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
           {
             Icon: Shield, label: 'Privacy e dati', sub: 'I tuoi dati sono al sicuro',
             color: '#3A6EA8', bg: '#EEF4FB',
-            action: () => window.open('https://bertie.app/privacy', '_blank'),
+            action: () => window.open('https://philograna.github.io/Bertie/privacy.html', '_blank'),
           },
           {
             Icon: MessageCircle, label: 'Feedback', sub: 'Aiutaci a migliorare Bertie',
@@ -1476,7 +1400,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [tab, setTab]               = useState('vaccini')
-  const [isSupporter, setIsSupporter]           = useState(false)
+  const [isSupporter, setIsSupporter]           = useState(true)
   const [supporterExpires, setSupporterExpires] = useState(null)
   const [userCity, setUserCity]                 = useState('')
   const [upgrading, setUpgrading]           = useState(false)
@@ -1507,7 +1431,6 @@ export default function Dashboard() {
       supabase.from('dogs').select('name, breed, photo_url, weight, age_label, sex').eq('user_id', u.id).maybeSingle(),
     ])
     if (profile) {
-      setIsSupporter(!!profile.supporter)
       setSupporterExpires(profile.supporter_expires || null)
       setUserCity(profile.city || '')
     }
@@ -1669,15 +1592,10 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Banner ads — solo per non-supporter, esclusi Shop e Mappa */}
-      {tab !== 'accessori' && tab !== 'mappa' && (
-        <SupporterBanner isSupporter={isSupporter} onUpgrade={() => setTab('profilo')} />
-      )}
-
       <BottomNav
         active={tab}
-        onChange={(t) => { if (t === 'aivet' && !isSupporter) return; setTab(t) }}
-        isPremium={isSupporter}
+        onChange={(t) => setTab(t)}
+        isPremium={true}
         notifiche={vaccini.filter(v => v.scaduto || v.giorni <= 30).length}
       />
     </AppShell>

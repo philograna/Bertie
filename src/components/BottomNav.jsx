@@ -19,7 +19,7 @@ function BertieLogoIcon({ size = 20, active }) {
 
 const ALL_TABS = [
   { id: 'vaccini',   icon: Home,        label: 'Home',     premium: false },
-  { id: 'aivet',     icon: Stethoscope, label: 'AI Vet',   premium: true  },
+  { id: 'aivet',     icon: Stethoscope, label: 'AI Vet',   premium: false },
   { id: 'diario',    icon: BookOpen,    label: 'Libretto', premium: false },
   { id: 'accessori', icon: ShoppingBag, label: 'Shop',     premium: false },
   { id: 'mappa',     icon: MapPin,      label: 'Luoghi',   premium: false },
