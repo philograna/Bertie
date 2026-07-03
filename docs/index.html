@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bertie — Il libretto del tuo cane</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: #FDFAF3;
+      color: #2A2C2C;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      text-align: center;
+    }
+    img.logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 36px;
+      font-weight: 700;
+      color: #E8A859;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    p.tagline {
+      font-size: 18px;
+      color: #6B6E6E;
+      margin-bottom: 40px;
+    }
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 280px;
+    }
+    a.btn {
+      display: block;
+      padding: 14px 24px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    a.btn:hover { opacity: 0.8; }
+    a.btn.primary {
+      background: #E8A859;
+      color: #FFFFFF;
+    }
+    a.btn.secondary {
+      background: #F6ECC8;
+      color: #2A2C2C;
+    }
+    footer {
+      margin-top: 60px;
+      font-size: 12px;
+      color: #A7A8A8;
+    }
+  </style>
+</head>
+<body>
+  <img class="logo" src="bertie-logo.svg" alt="Bertie" />
+  <h1>Bertie</h1>
+  <p class="tagline">Il libretto del tuo cane</p>
+
+  <div class="links">
+    <a class="btn primary" href="https://apps.apple.com/it/app/bertie/id0000000000" target="_blank">
+      Scarica su App Store
+    </a>
+    <a class="btn secondary" href="privacy.html">
+      Privacy Policy
+    </a>
+    <a class="btn secondary" href="mailto:ciao@bertie.it">
+      Contattaci
+    </a>
+  </div>
+
+  <footer>&copy; 2026 Bertie · ciao@bertie.it</footer>
+</body>
+</html>
