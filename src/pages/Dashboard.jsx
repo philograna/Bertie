@@ -1462,11 +1462,11 @@ export default function Dashboard() {
         ({ height }) => setBannerHeight(height ?? 50),
       )
       await AdMob.showBanner({
-        adId: 'ca-app-pub-3940256099942544/2934735716',
+        adId: 'ca-app-pub-4785642866740799/4282832264',
         adSize: BannerAdSize.ADAPTIVE_BANNER,
         position: BannerAdPosition.BOTTOM_CENTER,
         margin: 0,
-        isTesting: true,
+        isTesting: false,
       })
     }
     showAd()
