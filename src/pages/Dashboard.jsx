@@ -293,7 +293,7 @@ function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, us
           <span className="flex items-center gap-1.5 text-xs font-bold" style={{ color: '#B77336' }}>
             💊 Antiparassitari
           </span>
-          <button className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#E8A859' }}>
+          <button onClick={onGoToLibretto} className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#E8A859' }}>
             <Plus size={11} /> Aggiungi
           </button>
         </div>
@@ -307,7 +307,7 @@ function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, us
           <span className="flex items-center gap-1.5 text-xs font-bold" style={{ color: '#B77336' }}>
             🛁 Toelettatura
           </span>
-          <button className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#E8A859' }}>
+          <button onClick={onGoToLibretto} className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#E8A859' }}>
             <Plus size={11} /> Prenota
           </button>
         </div>
@@ -1464,8 +1464,8 @@ export default function Dashboard() {
         adId: 'ca-app-pub-4785642866740799/4282832264',
         adSize: BannerAdSize.ADAPTIVE_BANNER,
         position: BannerAdPosition.BOTTOM_CENTER,
-        margin: 0,
-        isTesting: false,
+        margin: 83,
+        isTesting: true,
       })
     }
     showAd()
@@ -1625,7 +1625,7 @@ export default function Dashboard() {
         onChange={(t) => setTab(t)}
         isPremium={true}
         notifiche={0}
-        bannerOffset={bannerHeight}
+        bannerOffset={0}
       />
     </AppShell>
   )
