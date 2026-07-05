@@ -10,28 +10,6 @@ import BottomNav from '../components/BottomNav'
 import GoogleAd from '../components/GoogleAd'
 
 // ─── Mock data ─────────────────────────────────────────────────────────────
-const vaccini = [
-  { nome: 'Polivalente DHPP', data: '12 Giu 2025', giorni: 38, scaduto: false },
-  { nome: 'Rabbia',           data: '03 Mar 2025', giorni: -63, scaduto: true },
-  { nome: 'Leishmaniosi',     data: '20 Ago 2025', giorni: 107, scaduto: false },
-]
-
-
-// Cronologia vaccini (storico somministrazioni)
-const storicoVaccini = [
-  { data: '12 Giu 2024', nome: 'Polivalente DHPP',  lotto: 'A4521X', veterinario: 'Dr. Rossi', prossima: '12 Giu 2025' },
-  { data: '03 Mar 2024', nome: 'Rabbia',             lotto: 'R8812B', veterinario: 'Dr. Rossi', prossima: '03 Mar 2025' },
-  { data: '20 Ago 2024', nome: 'Leishmaniosi',       lotto: 'L2290C', veterinario: 'Dr. Bianchi', prossima: '20 Ago 2025' },
-  { data: '15 Gen 2024', nome: 'Polivalente DHPP',  lotto: 'A3310Y', veterinario: 'Dr. Rossi', prossima: '12 Giu 2024' },
-]
-
-// Cronologia antiparassitari
-const storicoAntipar = [
-  { data: '01 Apr 2025', prodotto: 'Frontline Combo L',   tipo: 'Spot-on',   note: 'Applicato tra le scapole' },
-  { data: '01 Gen 2025', prodotto: 'Advantix 25–40 kg',   tipo: 'Spot-on',   note: '' },
-  { data: '01 Ott 2024', prodotto: 'Frontline Combo L',   tipo: 'Spot-on',   note: 'Applicato tra le scapole' },
-  { data: '01 Lug 2024', prodotto: 'NexGard Spectra XL',  tipo: 'Compresse', note: 'Somministrato con il pasto' },
-]
 
 // ─── Home / Salute ──────────────────────────────────────────────────────────
 const GIORNI_IT = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato']
@@ -145,11 +123,27 @@ function BottomDrawer({ open, onClose, children, style = {} }) {
   )
 }
 
-function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, userName }) {
-  const [listaVaccini, setListaVaccini] = useState(vaccini)
-  const [rinnovaTarget, setRinnovaTarget] = useState(null) // vaccino da rinnovare
+function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, userName, dogId, onGoToLibretto }) {
+  const [listaVaccini, setListaVaccini] = useState([])
+  const [rinnovaTarget, setRinnovaTarget] = useState(null)
   const [nuovaData, setNuovaData]         = useState('')
   const [rinnovaSaving, setRinnovaSaving] = useState(false)
+
+  useEffect(() => {
+    if (!dogId) return
+    const now = new Date()
+    supabase.from('vaccines').select('*')
+      .eq('dog_id', dogId).eq('type', 'vaccine')
+      .order('next_date', { ascending: true })
+      .then(({ data }) => {
+        setListaVaccini((data || []).map(v => ({
+          nome:    v.name,
+          data:    v.date ? new Date(v.date).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }) : '',
+          giorni:  v.next_date ? Math.round((new Date(v.next_date) - now) / 86400000) : null,
+          scaduto: v.next_date ? new Date(v.next_date) < now : false,
+        })))
+      })
+  }, [dogId])
 
   const handleRinnova = () => {
     if (!nuovaData) return
@@ -255,10 +249,15 @@ function SaluteView({ dogName, dogRazza, photoUrl, dogWeight, dogAge, dogSex, us
           <span className="flex items-center gap-1.5 text-xs font-bold" style={{ color: '#B77336' }}>
             <Syringe size={11} /> Vaccini
           </span>
-          <button className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#E8A859' }}>
+          <button onClick={onGoToLibretto} className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#E8A859' }}>
             <Plus size={11} /> Aggiungi
           </button>
         </div>
+        {listaVaccini.length === 0 && (
+          <div className="px-4 py-3" style={{ borderTop: '1px solid #F6ECC8' }}>
+            <p className="text-sm" style={{ color: '#A7A8A8' }}>Nessun vaccino registrato</p>
+          </div>
+        )}
         {listaVaccini.map((v) => (
           <div key={v.nome}
             className="flex items-center justify-between px-4 py-3"
@@ -1598,7 +1597,7 @@ export default function Dashboard() {
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-4" style={{ paddingBottom: `calc(160px + ${bannerHeight}px + env(safe-area-inset-bottom))` }}>
-        {tab === 'vaccini'   && <SaluteView dogName={dogName} dogRazza={dogRazza} photoUrl={dogPhotoUrl} dogWeight={dogWeight} dogAge={dogAge} dogSex={dogSex} userName={userName} />}
+        {tab === 'vaccini'   && <SaluteView dogName={dogName} dogRazza={dogRazza} photoUrl={dogPhotoUrl} dogWeight={dogWeight} dogAge={dogAge} dogSex={dogSex} userName={userName} dogId={dogId} onGoToLibretto={() => setTab('diario')} />}
         {tab === 'mappa'     && <LuoghiView city={userCity} />}
         {tab === 'aivet'     && <AIVetView isSupporter={isSupporter} />}
         {tab === 'diario'    && <LibrettoView dogName={dogName} dogId={dogId} />}
@@ -1625,7 +1624,7 @@ export default function Dashboard() {
         active={tab}
         onChange={(t) => setTab(t)}
         isPremium={true}
-        notifiche={vaccini.filter(v => v.scaduto || v.giorni <= 30).length}
+        notifiche={0}
         bannerOffset={bannerHeight}
       />
     </AppShell>
