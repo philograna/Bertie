@@ -1160,12 +1160,12 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
           {
             Icon: Shield, label: 'Privacy e dati', sub: 'I tuoi dati sono al sicuro',
             color: '#3A6EA8', bg: '#EEF4FB',
-            action: () => window.open('https://philograna.github.io/Bertie/privacy.html', '_blank'),
+            action: () => window.open('https://philograna.github.io/Bertie/privacy.html', '_system'),
           },
           {
             Icon: MessageCircle, label: 'Feedback', sub: 'Aiutaci a migliorare Bertie',
             color: '#2E7D52', bg: '#F0FBF4',
-            action: () => window.open('mailto:ciao@bertie.it', '_blank'),
+            action: () => window.open('mailto:ciao@bertie.it', '_system'),
           },
           {
             Icon: LogOut, label: 'Esci', sub: null,
