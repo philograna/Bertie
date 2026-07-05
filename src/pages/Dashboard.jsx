@@ -1401,7 +1401,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [tab, setTab]               = useState('vaccini')
-  const [isSupporter, setIsSupporter]           = useState(true)
+  const [isSupporter, setIsSupporter]           = useState(false)
   const [bannerHeight, setBannerHeight]         = useState(0)
   const [supporterExpires, setSupporterExpires] = useState(null)
   const [userCity, setUserCity]                 = useState('')
