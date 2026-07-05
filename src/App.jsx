@@ -35,8 +35,20 @@ export default function App() {
 
     const listener = CapApp.addListener('appUrlOpen', async ({ url }) => {
       if (!url.startsWith('it.bertie.app://auth/callback')) return
-      const { error } = await supabase.auth.exchangeCodeForSession(url)
-      if (!error) Browser.close()
+      try {
+        if (url.includes('access_token=')) {
+          const fragment = url.includes('#') ? url.split('#')[1] : url.split('?')[1]
+          const params = new URLSearchParams(fragment)
+          await supabase.auth.setSession({
+            access_token: params.get('access_token'),
+            refresh_token: params.get('refresh_token'),
+          })
+        } else {
+          await supabase.auth.exchangeCodeForSession(url)
+        }
+      } finally {
+        Browser.close()
+      }
     })
 
     return () => { listener.then(l => l.remove()) }
