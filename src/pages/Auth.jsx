@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import AppShell from '../components/AppShell'
 import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
+import { useAuth } from '../lib/auth'
 
 const G = {
   gold:    '#E8A859',
@@ -31,6 +32,12 @@ function GoogleIcon() {
 export default function Auth() {
   const navigate  = useNavigate()
   const location  = useLocation()
+  const { user }  = useAuth()
+
+  useEffect(() => {
+    if (user) navigate('/dashboard', { replace: true })
+  }, [user])
+
   const [mode, setMode]             = useState(location.pathname === '/registrati' ? 'register' : 'login')
   const [nome, setNome]             = useState('')
   const [email, setEmail]           = useState('')
