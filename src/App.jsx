@@ -31,21 +31,13 @@ function RootRedirect() {
 export default function App() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
-    AdMob.initialize({ requestTrackingAuthorization: true, initializeForTesting: true })
+    AdMob.initialize({ requestTrackingAuthorization: true, initializeForTesting: import.meta.env.DEV })
 
+    const CALLBACK_PREFIX = 'it.bertie.app://auth/callback'
     const listener = CapApp.addListener('appUrlOpen', async ({ url }) => {
-      if (!url.startsWith('it.bertie.app://auth/callback')) return
+      if (!url.startsWith(CALLBACK_PREFIX)) return
       try {
-        if (url.includes('access_token=')) {
-          const fragment = url.includes('#') ? url.split('#')[1] : url.split('?')[1]
-          const params = new URLSearchParams(fragment)
-          await supabase.auth.setSession({
-            access_token: params.get('access_token'),
-            refresh_token: params.get('refresh_token'),
-          })
-        } else {
-          await supabase.auth.exchangeCodeForSession(url)
-        }
+        await supabase.auth.exchangeCodeForSession(url)
       } finally {
         Browser.close()
       }
