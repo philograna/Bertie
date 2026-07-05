@@ -1465,7 +1465,7 @@ export default function Dashboard() {
         adSize: BannerAdSize.ADAPTIVE_BANNER,
         position: BannerAdPosition.BOTTOM_CENTER,
         margin: 83,
-        isTesting: true,
+        isTesting: import.meta.env.DEV,
       })
     }
     showAd()
