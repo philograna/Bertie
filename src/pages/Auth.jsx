@@ -94,6 +94,7 @@ export default function Auth() {
         options: {
           redirectTo: 'it.bertie.app://auth/callback',
           skipBrowserRedirect: true,
+          queryParams: { prompt: 'select_account' },
         },
       })
       if (error) { setError(error.message); setGoogleLoading(false); return }
