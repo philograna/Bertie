@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core'
 import { AdMob } from '@capacitor-community/admob'
 import { App as CapApp } from '@capacitor/app'
 import { Browser } from '@capacitor/browser'
+import { Purchases } from '@revenuecat/purchases-capacitor'
 import { supabase } from './lib/supabase'
 import Home from './pages/Home'
 import Landing from './pages/Landing'
@@ -32,6 +33,9 @@ export default function App() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
     AdMob.initialize({ requestTrackingAuthorization: true, initializeForTesting: import.meta.env.DEV })
+
+    const rcKey = import.meta.env.VITE_REVENUECAT_APPLE_KEY
+    if (rcKey) Purchases.configure({ apiKey: rcKey })
 
     const CALLBACK_PREFIX = 'it.bertie.app://auth/callback'
     const listener = CapApp.addListener('appUrlOpen', async ({ url }) => {

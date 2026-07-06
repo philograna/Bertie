@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
 import { AdMob, BannerAdSize, BannerAdPosition, BannerAdPluginEvents } from '@capacitor-community/admob'
+import { Purchases } from '@revenuecat/purchases-capacitor'
 import { Plus, ChevronRight, Send, Syringe, MapPin, Camera, Bell, Shield, MessageCircle, LogOut, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import LuoghiView from './Luoghi'
@@ -943,7 +945,7 @@ function SupporterBanner({ isSupporter, onUpgrade }) {
   )
 }
 
-function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade, onManage,
+function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade, onManage, onRestore,
                        upgrading, upgradeError, dogName, dogRazza,
                        photoUrl: initialPhotoUrl, onPhotoChange }) {
   const [photoUrl, setPhotoUrl]   = useState(initialPhotoUrl)
@@ -1145,6 +1147,13 @@ function ProfiloView({ navigate, user, isSupporter, supporterExpires, onUpgrade,
               {upgradeError}
             </p>
           )}
+          <button onClick={onRestore}
+            style={{
+              width: '100%', marginTop: 12, padding: '8px', background: 'none', border: 'none',
+              cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.45)', position: 'relative',
+            }}>
+            Ripristina acquisti
+          </button>
         </div>
       )}
 
@@ -1399,7 +1408,6 @@ const PAGE_TITLES = {
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
   const [tab, setTab]               = useState('vaccini')
   const [isSupporter, setIsSupporter]           = useState(false)
   const [bannerHeight, setBannerHeight]         = useState(0)
@@ -1429,13 +1437,10 @@ export default function Dashboard() {
     const name = meta.full_name || meta.name || u.email?.split('@')[0] || null
     setUserName(name)
     const [{ data: profile }, { data: dog }] = await Promise.all([
-      supabase.from('profiles').select('supporter, supporter_expires, city').eq('id', u.id).maybeSingle(),
+      supabase.from('profiles').select('city').eq('id', u.id).maybeSingle(),
       supabase.from('dogs').select('name, breed, photo_url, weight, age_label, sex').eq('user_id', u.id).maybeSingle(),
     ])
-    if (profile) {
-      setSupporterExpires(profile.supporter_expires || null)
-      setUserCity(profile.city || '')
-    }
+    if (profile) setUserCity(profile.city || '')
     if (dog) {
       setDogId(dog.id)
       setDogName(dog.name)
@@ -1445,16 +1450,32 @@ export default function Dashboard() {
       setDogAge(dog.age_label || null)
       setDogSex(dog.sex || null)
     }
+    // Controlla entitlement RevenueCat (solo su native)
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await Purchases.logIn({ appUserID: u.id })
+        const { customerInfo } = await Purchases.getCustomerInfo()
+        const entitlement = customerInfo.entitlements.active['Bertie Pro']
+        setIsSupporter(!!entitlement)
+        setSupporterExpires(entitlement?.expirationDate ?? null)
+      } catch {
+        // RevenueCat non disponibile: fallback non-supporter
+      }
+    }
   }
 
   // Carica al mount
   useEffect(() => { loadUser() }, [])
 
-  // Banner AdMob
+  // Banner AdMob — visibile solo per i non-supporter
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
+    if (isSupporter) {
+      AdMob.removeBanner().catch(() => {})
+      setBannerHeight(0)
+      return
+    }
     let sizeListener
-
     const showAd = async () => {
       sizeListener = await AdMob.addListener(
         BannerAdPluginEvents.SizeChanged,
@@ -1469,12 +1490,11 @@ export default function Dashboard() {
       })
     }
     showAd()
-
     return () => {
       sizeListener?.remove()
       AdMob.removeBanner()
     }
-  }, [])
+  }, [isSupporter])
 
   // Ricarica ogni volta che la pagina torna visibile (es. ritorno dall'onboarding)
   useEffect(() => {
@@ -1483,79 +1503,53 @@ export default function Dashboard() {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
 
-  // Ritorno da Stripe con ?supporter=1
-  useEffect(() => {
-    if (searchParams.get('supporter') !== '1') return
-    setSearchParams({}) // pulisce URL
-    // Aspetta il webhook (max 6s) poi ricarica il profilo
-    const poll = async () => {
-      for (let i = 0; i < 5; i++) {
-        await new Promise(r => setTimeout(r, 1200))
-        const { data } = await supabase.from('profiles')
-          .select('supporter, supporter_expires')
-          .eq('id', (await supabase.auth.getUser()).data.user?.id ?? '')
-          .maybeSingle()
-        if (data?.supporter) {
-          setIsSupporter(true)
-          setSupporterExpires(data.supporter_expires || null)
-          break
-        }
-      }
-      setShowSuccess(true)
-      setTimeout(() => setShowSuccess(false), 5000)
-    }
-    poll()
-  }, [])
-
-  // Chiama Edge Function → redirect Stripe Checkout
+  // Acquisto abbonamento tramite Apple IAP (RevenueCat)
   const handleUpgrade = async () => {
-    if (!user) return
+    if (!user || !Capacitor.isNativePlatform()) return
     setUpgrading(true)
     setUpgradeError('')
     try {
-      const { data: sessionData } = await supabase.auth.getSession()
-      const token = sessionData?.session?.access_token
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      )
-      const json = await res.json()
-      if (json.error) throw new Error(json.error)
-      window.location.href = json.url
+      const { offerings } = await Purchases.getOfferings()
+      const pkgs = offerings.current?.availablePackages ?? []
+      const pkg = pkgs.find(p => p.packageType === 'ANNUAL') ?? pkgs[0]
+      if (!pkg) throw new Error('Prodotto non disponibile')
+      const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg })
+      const entitlement = customerInfo.entitlements.active['Bertie Pro']
+      if (entitlement) {
+        setIsSupporter(true)
+        setSupporterExpires(entitlement.expirationDate ?? null)
+        setShowSuccess(true)
+        setTimeout(() => setShowSuccess(false), 5000)
+      }
     } catch (err) {
-      setUpgradeError(err.message || 'Errore durante il checkout')
+      if (!err.userCancelled) {
+        setUpgradeError(err.message || 'Errore durante l\'acquisto')
+      }
+    } finally {
       setUpgrading(false)
     }
   }
 
-  // Apre il portale Stripe per gestire l'abbonamento
-  const handleManageSubscription = async () => {
-    if (!user) return
+  // Ripristina acquisti precedenti (richiesto da Apple)
+  const handleRestorePurchases = async () => {
+    if (!Capacitor.isNativePlatform()) return
     try {
-      const { data: sessionData } = await supabase.auth.getSession()
-      const token = sessionData?.session?.access_token
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-portal-session`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      )
-      const json = await res.json()
-      if (json.error) throw new Error(json.error)
-      window.location.href = json.url
+      const { customerInfo } = await Purchases.restorePurchases()
+      const entitlement = customerInfo.entitlements.active['Bertie Pro']
+      setIsSupporter(!!entitlement)
+      setSupporterExpires(entitlement?.expirationDate ?? null)
+      if (entitlement) {
+        setShowSuccess(true)
+        setTimeout(() => setShowSuccess(false), 5000)
+      }
     } catch (err) {
-      console.error('Portale Stripe:', err.message)
+      console.error('Ripristino acquisti:', err.message)
     }
+  }
+
+  // Gestione abbonamento Apple (Impostazioni → ID Apple → Abbonamenti)
+  const handleManageSubscription = async () => {
+    await Browser.open({ url: 'https://apps.apple.com/account/subscriptions' })
   }
 
   return (
@@ -1610,6 +1604,7 @@ export default function Dashboard() {
             supporterExpires={supporterExpires}
             onUpgrade={handleUpgrade}
             onManage={handleManageSubscription}
+            onRestore={handleRestorePurchases}
             upgrading={upgrading}
             upgradeError={upgradeError}
             dogName={dogName}
